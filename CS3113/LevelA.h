@@ -1,18 +1,32 @@
 #include "Menu.h"
 
-constexpr int LEVEL_WIDTH = 16,
-              LEVEL_HEIGHT = 9;
+constexpr int LEVEL_WIDTH = 14,
+              LEVEL_HEIGHT = 12;
 
 class LevelA : public Scene {
 private:
-    unsigned int mLevelData[LEVEL_WIDTH * LEVEL_HEIGHT] = {};
+    unsigned int mLevelData[LEVEL_WIDTH * LEVEL_HEIGHT] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
 
 public:
-    static constexpr float TILE_DIMENSION       = 70.0f,
+    static constexpr float TILE_DIMENSION       = 100.0f,
                         ACCELERATION_OF_GRAVITY = 981.0f,
-                        END_GAME_THRESHOLD      = 800.0f;
+                        END_GAME_THRESHOLD      = 800.0f,
+                        CAR_SPEED              = 300.0f;
 
-    Entity* gold = nullptr;
+    Entity* cars = nullptr;
     LevelA();
     LevelA(Vector2 origin, const char *bgHexCode);
     ~LevelA();

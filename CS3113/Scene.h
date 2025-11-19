@@ -7,6 +7,8 @@ struct GameState
 {
     Map *map;
 
+    Entity *witch;
+
     Camera2D camera;
 
     int nextSceneID = -1;

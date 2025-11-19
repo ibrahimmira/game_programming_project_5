@@ -4,65 +4,90 @@ Entity::Entity() : mPosition {0.0f, 0.0f}, mMovement {0.0f, 0.0f},
                    mVelocity {0.0f, 0.0f}, mAcceleration {0.0f, 0.0f},
                    mScale {DEFAULT_SIZE, DEFAULT_SIZE},
                    mColliderDimensions {DEFAULT_SIZE, DEFAULT_SIZE}, 
-                   mTexture {NULL}, mTextureType {SINGLE}, mAngle {0.0f},
-                   mSpriteSheetDimensions {}, mDirection {RIGHT}, 
-                   mAnimationAtlas {{}}, mAnimationIndices {}, mFrameSpeed {0},
-                   mEntityType {EMPTY} { }
+                   mCurrentTexture {NULL}, mTextureType {SINGLE}, mAngle {0.0f},
+                   mFacingLeft {true},
+                   mSpriteSheetDimensions {}, mAnimation {WALK_LEFT}, 
+                   mPreviousDirection {WALK_LEFT}, mAnimationAtlas {{}}, 
+                   mAnimationIndices {}, mFrameSpeed {0}, mEntityType {EMPTY} 
+                   { }
 
 Entity::Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
     EntityType entityType) : mPosition {position}, mVelocity {0.0f, 0.0f}, 
     mAcceleration {0.0f, 0.0f}, mScale {scale}, mMovement {0.0f, 0.0f}, 
-    mColliderDimensions {scale}, mTexture {LoadTexture(textureFilepath)}, 
-    mTextureType {SINGLE}, mDirection {RIGHT}, mAnimationAtlas {{}}, 
-    mAnimationIndices {}, mFrameSpeed {0}, mSpeed {DEFAULT_SPEED}, 
-    mAngle {0.0f}, mEntityType {entityType} { }
+    mColliderDimensions {scale}, mCurrentTexture {LoadTexture(textureFilepath)}, 
+    mTextureType {SINGLE}, mAnimation {WALK_LEFT}, mPreviousDirection {WALK_LEFT}, 
+    mFacingLeft {true},
+    mAnimationAtlas {{}}, mAnimationIndices {}, mFrameSpeed {0}, 
+    mSpeed {DEFAULT_SPEED}, mAngle {0.0f}, mEntityType {entityType} { }
 
-Entity::Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
-        TextureType textureType, Vector2 spriteSheetDimensions, std::map<Direction, 
+Entity::Entity(Vector2 position, Vector2 scale, std::map<Animation, std::string> textures,
+        TextureType textureType, std::map<Animation, Vector2> spriteSheetDimensions, std::map<Animation, 
         std::vector<int>> animationAtlas, EntityType entityType) : 
         mPosition {position}, mVelocity {0.0f, 0.0f}, 
         mAcceleration {0.0f, 0.0f}, mMovement { 0.0f, 0.0f }, mScale {scale},
-        mColliderDimensions {scale}, mTexture {LoadTexture(textureFilepath)}, 
+        mColliderDimensions {scale}, 
         mTextureType {ATLAS}, mSpriteSheetDimensions {spriteSheetDimensions},
-        mAnimationAtlas {animationAtlas}, mDirection {RIGHT},
-        mAnimationIndices {animationAtlas.at(RIGHT)}, 
+        mAnimationAtlas {animationAtlas}, mAnimation {WALK_LEFT}, 
+        mPreviousDirection {WALK_LEFT}, 
+        mFacingLeft {true},
+        mAnimationIndices {animationAtlas.at(WALK_LEFT)}, 
         mFrameSpeed {DEFAULT_FRAME_SPEED}, mAngle { 0.0f }, 
-        mSpeed { DEFAULT_SPEED }, mEntityType {entityType} { }
+        mSpeed { DEFAULT_SPEED }, mEntityType {entityType} 
+{
+    mTextures[WALK_LEFT]  = LoadTexture(textures[WALK_LEFT].c_str());
+    mTextures[WALK_RIGHT] = LoadTexture(textures[WALK_RIGHT].c_str());
+    mTextures[IDLE_LEFT]  = LoadTexture(textures[IDLE_LEFT].c_str());
+    mTextures[IDLE_RIGHT] = LoadTexture(textures[IDLE_RIGHT].c_str());
+    // mTextures[CHARGING]   = LoadTexture(textures[CHARGING].c_str());
+    mTextures[ATTACK_1_LEFT]  = LoadTexture(textures[ATTACK_1_LEFT].c_str());
+    mTextures[ATTACK_1_RIGHT] = LoadTexture(textures[ATTACK_1_RIGHT].c_str());
+    
+    
+    
+    mAnimationIndices = mAnimationAtlas.at(mAnimation);
+    mCurrentTexture = mTextures.at(mAnimation);
+    mCurrentSpriteSheetDimensions = mSpriteSheetDimensions.at(mAnimation);
+}
 
-Entity::~Entity() { UnloadTexture(mTexture); };
+Entity::~Entity()
+{ 
+    UnloadTexture(mTextures[WALK_LEFT]);
+    UnloadTexture(mTextures[WALK_RIGHT]);
+    UnloadTexture(mTextures[IDLE_LEFT]);
+    UnloadTexture(mTextures[IDLE_RIGHT]);
+    UnloadTexture(mTextures[CHARGING]);
+    UnloadTexture(mTextures[ATTACK_1_LEFT]);
+    UnloadTexture(mTextures[ATTACK_1_RIGHT]);
+
+};
 
 void Entity::checkCollisionY(Entity *collidableEntities, int collisionCheckCount)
 {
     for (int i = 0; i < collisionCheckCount; i++)
     {
-        // STEP 1: For every entity that our player can collide with...
         Entity *collidableEntity = &collidableEntities[i];
         
         if (isColliding(collidableEntity))
         {
-            // STEP 2: Calculate the distance between its centre and our centre
-            //         and use that to calculate the amount of overlap between
-            //         both bodies.
             float yDistance = fabs(mPosition.y - collidableEntity->mPosition.y);
             float yOverlap  = fabs(yDistance - (mColliderDimensions.y / 2.0f) - 
                               (collidableEntity->mColliderDimensions.y / 2.0f));
-            
-            // STEP 3: "Unclip" ourselves from the other entity, and zero our
-            //         vertical velocity.
-            if (mVelocity.y > 0) 
+
+            if (mPosition.y < collidableEntity->mPosition.y)
             {
                 mPosition.y -= yOverlap;
-                mVelocity.y  = 0;
                 mIsCollidingBottom = true;
-            } else if (mVelocity.y < 0) 
+            }
+            else
             {
                 mPosition.y += yOverlap;
-                mVelocity.y  = 0;
                 mIsCollidingTop = true;
 
-                if (collidableEntity->mEntityType == BLOCK)
-                    collidableEntity->deactivate();
+                // if (collidableEntity->mEntityType == BLOCK)
+                //     collidableEntity->deactivate();
             }
+
+            mVelocity.y = 0;
         }
     }
 }
@@ -75,33 +100,21 @@ void Entity::checkCollisionX(Entity *collidableEntities, int collisionCheckCount
         
         if (isColliding(collidableEntity))
         {            
-            // When standing on a platform, we're always slightly overlapping
-            // it vertically due to gravity, which causes false horizontal
-            // collision detections. So the solution I found is only resolve X
-            // collisions if there's significant Y overlap, preventing the 
-            // platform we're standing on from acting like a wall.
-            float yDistance = fabs(mPosition.y - collidableEntity->mPosition.y);
-            float yOverlap  = fabs(yDistance - (mColliderDimensions.y / 2.0f) - (collidableEntity->mColliderDimensions.y / 2.0f));
-
-            // Skip if barely touching vertically (standing on platform)
-            if (yOverlap < Y_COLLISION_THRESHOLD) continue;
-
             float xDistance = fabs(mPosition.x - collidableEntity->mPosition.x);
             float xOverlap  = fabs(xDistance - (mColliderDimensions.x / 2.0f) - (collidableEntity->mColliderDimensions.x / 2.0f));
 
-            if (mVelocity.x > 0) {
-                mPosition.x     -= xOverlap;
-                mVelocity.x      = 0;
-
-                // Collision!
+            if (mPosition.x < collidableEntity->mPosition.x)
+            {
+                mPosition.x -= xOverlap;
                 mIsCollidingRight = true;
-            } else if (mVelocity.x < 0) {
-                mPosition.x    += xOverlap;
-                mVelocity.x     = 0;
- 
-                // Collision!
+            }
+            else
+            {
+                mPosition.x += xOverlap;
                 mIsCollidingLeft = true;
             }
+
+            mVelocity.x = 0;
         }
     }
 }
@@ -188,7 +201,26 @@ bool Entity::isColliding(Entity *other) const
 
 void Entity::animate(float deltaTime)
 {
-    mAnimationIndices = mAnimationAtlas.at(mDirection);
+
+    bool isAction = 
+        mAnimation == ATTACK_1_LEFT || mAnimation == ATTACK_1_RIGHT;
+
+    bool movingHorizontally = fabsf(mMovement.x) > 0.0f;
+
+    if (!isAction)
+    {
+        Animation targetAnimation = mFacingLeft ? IDLE_LEFT : IDLE_RIGHT;
+        if (movingHorizontally)
+            targetAnimation = mFacingLeft ? WALK_LEFT : WALK_RIGHT;
+
+        if (mTextureType == ATLAS && mAnimation != targetAnimation)
+            setAnimation(targetAnimation);
+    }
+
+
+    mAnimationIndices             = mAnimationAtlas.at(mAnimation);
+    mCurrentTexture               = mTextures.at(mAnimation);
+    mCurrentSpriteSheetDimensions = mSpriteSheetDimensions.at(mAnimation);
 
     mAnimationTime += deltaTime;
     float framesPerSecond = 1.0f / mFrameSpeed;
@@ -199,7 +231,17 @@ void Entity::animate(float deltaTime)
 
         mCurrentFrameIndex++;
         mCurrentFrameIndex %= mAnimationIndices.size();
+
+        if (isAction && mCurrentFrameIndex == 0)
+        {
+            setFrameSpeed(DEFAULT_FRAME_SPEED);
+            Animation idleAnimation = mFacingLeft ? IDLE_LEFT : IDLE_RIGHT;
+            if (mAnimation != idleAnimation) setAnimation(idleAnimation);
+        }
     }
+
+
+
 }
 
 void Entity::AIWander() { moveLeft(); }
@@ -245,12 +287,12 @@ void Entity::update(float deltaTime, Entity *player, Map *map,
     Entity *collidableEntities, int collisionCheckCount)
 {
     if (mEntityStatus == INACTIVE) return;
-    
-    if (mEntityType == NPC) AIActivate(player);
+    if (mEntityType == NPC)        AIActivate(player);
 
     resetColliderFlags();
 
     mVelocity.x = mMovement.x * mSpeed;
+    mVelocity.y = mMovement.y * mSpeed;
 
     mVelocity.x += mAcceleration.x * deltaTime;
     mVelocity.y += mAcceleration.y * deltaTime;
@@ -269,12 +311,13 @@ void Entity::update(float deltaTime, Entity *player, Map *map,
     checkCollisionY(collidableEntities, collisionCheckCount);
     checkCollisionY(map);
 
-    mPosition.x += mVelocity.x * deltaTime;
+    if (mAnimation != CHARGING) mPosition.x += mVelocity.x * deltaTime;
     checkCollisionX(collidableEntities, collisionCheckCount);
     checkCollisionX(map);
 
-    if (mTextureType == ATLAS && GetLength(mMovement) != 0 && mIsCollidingBottom) 
+    if (mTextureType == ATLAS) 
         animate(deltaTime);
+
 }
 
 void Entity::render()
@@ -292,16 +335,16 @@ void Entity::render()
                 0.0f, 0.0f,
 
                 // bottom-right corner (of texture)
-                static_cast<float>(mTexture.width),
-                static_cast<float>(mTexture.height)
+                static_cast<float>(mCurrentTexture.width),
+                static_cast<float>(mCurrentTexture.height)
             };
             break;
         case ATLAS:
             textureArea = getUVRectangle(
-                &mTexture, 
+                &mCurrentTexture, 
                 mAnimationIndices[mCurrentFrameIndex], 
-                mSpriteSheetDimensions.x, 
-                mSpriteSheetDimensions.y
+                mCurrentSpriteSheetDimensions.x, 
+                mCurrentSpriteSheetDimensions.y
             );
         
         default: break;
@@ -323,12 +366,12 @@ void Entity::render()
 
     // Render the texture on screen
     DrawTexturePro(
-        mTexture, 
+        mCurrentTexture, 
         textureArea, destinationArea, originOffset,
         mAngle, WHITE
     );
 
-    // displayCollider();
+    displayCollider();
 }
 
 void Entity::displayCollider() 

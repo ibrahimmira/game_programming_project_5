@@ -52,6 +52,19 @@ void initialise()
 
 void processInput() 
 {
+    gCurrentScene->getState().witch->resetMovement();
+
+    if      (IsKeyDown(KEY_A)) gCurrentScene->getState().witch->moveLeft();
+    else if (IsKeyDown(KEY_D)) gCurrentScene->getState().witch->moveRight();
+
+    if      (IsKeyDown(KEY_W)) gCurrentScene->getState().witch->moveUp();
+    else if (IsKeyDown(KEY_S)) gCurrentScene->getState().witch->moveDown();
+
+    if (GetLength(gCurrentScene->getState().witch->getMovement()) > 1.0f) 
+        gCurrentScene->getState().witch->normaliseMovement();
+
+    if (IsKeyPressed(KEY_J))
+        gCurrentScene->getState().witch->attack();
 
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
@@ -72,6 +85,7 @@ void update()
 
     while (deltaTime >= FIXED_TIMESTEP)
     {
+        gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
     }
 }

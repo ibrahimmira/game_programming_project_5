@@ -110,15 +110,22 @@ Rectangle getUVRectangle(const Texture2D *texture, int index, int rows, int cols
  * @param targetPosition The `targetPosition` parameter is a pointer to a `Vector2` structure that
  * represents the desired position where the camera should be focused or centered on.
  */
+// void panCamera(Camera2D *camera, const Vector2 *targetPosition)
+// {
+//     Vector2 positionDifference = Vector2Subtract(
+//         *targetPosition, 
+//         camera->target
+//     );
+
+//     camera->target = Vector2Add(
+//         camera->target, 
+//         Vector2Scale(positionDifference, 0.1f)
+//     ); // 0.1 = smoothing factor
+// }
+
 void panCamera(Camera2D *camera, const Vector2 *targetPosition)
 {
-    Vector2 positionDifference = Vector2Subtract(
-        *targetPosition, 
-        camera->target
-    );
-
-    camera->target = Vector2Add(
-        camera->target, 
-        Vector2Scale(positionDifference, 0.1f)
-    ); // 0.1 = smoothing factor
+    Vector2 positionDifference = Vector2Subtract(*targetPosition, camera->target);
+    positionDifference.x = 0.0f; 
+    camera->target = Vector2Add(camera->target, Vector2Scale(positionDifference, 0.1f));
 }
