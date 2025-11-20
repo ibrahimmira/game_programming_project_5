@@ -16,7 +16,11 @@ float gPreviousTicks   = 0.0f,
       gTimeAccumulator = 0.0f;
 
 Scene *gCurrentScene = nullptr;
+
+Menu  *gMenuScreen    = nullptr;
+
 LevelA *gLevelA = nullptr;
+
 std::vector<Scene*> gLevels = {};
 
 // Function Declarations
@@ -38,9 +42,10 @@ void initialise()
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Scenes");
     InitAudioDevice();
 
+    gMenuScreen = new Menu(ORIGIN, "#222831ff");
     gLevelA = new LevelA(ORIGIN, "#37675fff");
    
-
+    gLevels.push_back(gMenuScreen);
     gLevels.push_back(gLevelA);
 
 
@@ -52,6 +57,12 @@ void initialise()
 
 void processInput() 
 {
+    if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
+    if (gCurrentScene == gMenuScreen) {
+
+        if (IsKeyPressed(KEY_ENTER)) gMenuScreen->setGameCondition();
+    }
+
     GameState state = gCurrentScene->getState();
 
     Entity *controlledEntity = (state.drivingCar && state.car != nullptr)
@@ -85,7 +96,7 @@ void processInput()
     if (GetLength(controlledEntity->getMovement()) > 1.0f) 
         controlledEntity->normaliseMovement();
 
-    if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
+    // if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
 
 void update() 

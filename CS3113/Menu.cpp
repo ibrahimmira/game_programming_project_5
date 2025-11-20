@@ -33,7 +33,7 @@ void Menu::update(float deltaTime)
 void Menu::render()
 {
    ClearBackground(ColorFromHex(mBGColourHexCode));
-   DrawText(TextFormat("Golden Adventure"), mOrigin.x - 165, mOrigin.y - 70, 40, WHITE);
+   DrawText(TextFormat("Parking Adventure"), mOrigin.x - 175, mOrigin.y - 70, 40, WHITE);
    DrawText(TextFormat("Press enter to start"), mOrigin.x - 150, mOrigin.y + 50, 30, WHITE);
 }
 
