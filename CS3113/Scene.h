@@ -8,8 +8,13 @@ struct GameState
     Map *map;
 
     Entity *witch;
+    Entity *enemy;
+    Entity *car;
 
     Camera2D camera;
+
+    bool drivingCar = false;
+    bool carUnlocked = false;
 
     int nextSceneID = -1;
 };

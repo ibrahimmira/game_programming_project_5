@@ -55,7 +55,6 @@ Entity::~Entity()
     UnloadTexture(mTextures[WALK_RIGHT]);
     UnloadTexture(mTextures[IDLE_LEFT]);
     UnloadTexture(mTextures[IDLE_RIGHT]);
-    UnloadTexture(mTextures[CHARGING]);
     UnloadTexture(mTextures[ATTACK_1_LEFT]);
     UnloadTexture(mTextures[ATTACK_1_RIGHT]);
 
@@ -201,7 +200,6 @@ bool Entity::isColliding(Entity *other) const
 
 void Entity::animate(float deltaTime)
 {
-
     bool isAction = 
         mAnimation == ATTACK_1_LEFT || mAnimation == ATTACK_1_RIGHT;
 
@@ -244,22 +242,51 @@ void Entity::animate(float deltaTime)
 
 }
 
-void Entity::AIWander() { moveLeft(); }
+void Entity::AIWander() 
+{ 
+    if (mWanderHalfWidth <= 0.0f)
+    {
+        moveLeft();
+        return;
+    }
+
+    float minXpos = mWanderCenterXpos - mWanderHalfWidth;
+    float maxXpos = mWanderCenterXpos + mWanderHalfWidth;
+
+    if (mPosition.x <= minXpos)      mWanderMovingRight = true;
+    else if (mPosition.x >= maxXpos) mWanderMovingRight = false;
+
+    if (mWanderMovingRight) moveRight();
+    else                    moveLeft();
+}
+
+
 
 void Entity::AIFollow(Entity *target)
 {
+    if (target == nullptr) return;
+
+    float activationDistance = 50.0f;
+    float desiredSpacing = (mColliderDimensions.x + target->getColliderDimensions().x) / 2.0f;
+    // desiredSpacing += 0.0f; // to avoid overlapping
+
     switch (mAIState)
     {
     case IDLE:
-        if (Vector2Distance(mPosition, target->getPosition()) < 250.0f) 
+        if (Vector2Distance(mPosition, target->getPosition()) < activationDistance) 
             mAIState = WALKING;
         break;
 
     case WALKING:
-        // Depending on where the player is in respect to their x-position
-        // Change direction of the enemy
+        if (fabsf(mPosition.x - target->getPosition().x) <= desiredSpacing)
+        {
+            resetMovement();
+            break;
+        }
+
         if (mPosition.x > target->getPosition().x) moveLeft();
         else                                       moveRight();
+        break;
     
     default:
         break;
@@ -297,15 +324,15 @@ void Entity::update(float deltaTime, Entity *player, Map *map,
     mVelocity.x += mAcceleration.x * deltaTime;
     mVelocity.y += mAcceleration.y * deltaTime;
 
-    // ––––– JUMPING ––––– //
-    if (mIsJumping)
-    {
-        // STEP 1: Immediately return the flag to its original false state
-        mIsJumping = false;
+    // // ––––– JUMPING ––––– //
+    // if (mIsJumping)
+    // {
+    //     // STEP 1: Immediately return the flag to its original false state
+    //     mIsJumping = false;
         
-        // STEP 2: The player now acquires an upward velocity
-        mVelocity.y -= mJumpingPower;
-    }
+    //     // STEP 2: The player now acquires an upward velocity
+    //     mVelocity.y -= mJumpingPower;
+    // }
 
     mPosition.y += mVelocity.y * deltaTime;
     checkCollisionY(collidableEntities, collisionCheckCount);

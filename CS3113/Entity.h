@@ -52,8 +52,12 @@ private:
     EntityStatus mEntityStatus = ACTIVE;
     EntityType   mEntityType;
 
-    AIType  mAIType;
-    AIState mAIState;
+    AIType  mAIType  = WANDERER;
+    AIState mAIState = IDLE;
+
+    float mWanderCenterXpos    = 0.0f;
+    float mWanderHalfWidth  = 0.0f;
+    bool  mWanderMovingRight = true;
 
     bool isColliding(Entity *other) const;
 
@@ -124,7 +128,7 @@ public:
     Vector2     getVelocity()              const { return mVelocity;              }
     Vector2     getAcceleration()          const { return mAcceleration;          }
     Vector2     getScale()                 const { return mScale;                 }
-    Vector2     getColliderDimensions()    const { return mScale;                 }
+    Vector2     getColliderDimensions()    const { return mColliderDimensions; }
     Vector2     getCurrentSpriteSheetDimensions() const { return mCurrentSpriteSheetDimensions; }
     Texture2D   getCurrentTexture()        const { return mCurrentTexture;        }
     TextureType getTextureType()           const { return mTextureType;           }
@@ -143,6 +147,8 @@ public:
     bool isCollidingBottom() const { return mIsCollidingBottom; }
 
     std::map<Animation, std::vector<int>> getAnimationAtlas() const { return mAnimationAtlas; }
+
+    bool collidesWith(Entity *other) const { return isColliding(other); }
 
     void setPosition(Vector2 newPosition)
         { mPosition = newPosition;                 }
@@ -185,6 +191,13 @@ public:
         { mAIState = newState;                     }
     void setAIType(AIType newType)
         { mAIType = newType;                       }
+    void setWanderRange(float centreXpos, float halfWidth)
+        { 
+            mWanderCenterXpos   = centreXpos; 
+            mWanderHalfWidth = fmaxf(0.0f, halfWidth); 
+        }
+    void setWanderDirection(bool movingRight)
+        { mWanderMovingRight = movingRight; }
 };
 
 #endif // ENTITY_CPP
