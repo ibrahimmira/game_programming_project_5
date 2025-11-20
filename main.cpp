@@ -52,19 +52,38 @@ void initialise()
 
 void processInput() 
 {
-    gCurrentScene->getState().witch->resetMovement();
+    GameState state = gCurrentScene->getState();
 
-    if      (IsKeyDown(KEY_A)) gCurrentScene->getState().witch->moveLeft();
-    else if (IsKeyDown(KEY_D)) gCurrentScene->getState().witch->moveRight();
+    Entity *controlledEntity = (state.drivingCar && state.car != nullptr)
+        ? state.car
+        : state.witch;
 
-    if      (IsKeyDown(KEY_W)) gCurrentScene->getState().witch->moveUp();
-    else if (IsKeyDown(KEY_S)) gCurrentScene->getState().witch->moveDown();
+    if (controlledEntity == nullptr) return;
 
-    if (GetLength(gCurrentScene->getState().witch->getMovement()) > 1.0f) 
-        gCurrentScene->getState().witch->normaliseMovement();
+    controlledEntity->resetMovement();
 
-    if (IsKeyPressed(KEY_J))
-        gCurrentScene->getState().witch->attack();
+    if (state.drivingCar && state.car != nullptr)
+    {
+        if      (IsKeyDown(KEY_W)) controlledEntity->moveUp();
+        else if (IsKeyDown(KEY_S)) controlledEntity->moveDown();
+
+        if (IsKeyPressed(KEY_SPACE) && gLevelA != nullptr)
+            gLevelA->exitCar();
+    }
+    else
+    {
+        if      (IsKeyDown(KEY_A)) state.witch->moveLeft();
+        else if (IsKeyDown(KEY_D)) state.witch->moveRight();
+
+        if      (IsKeyDown(KEY_W)) state.witch->moveUp();
+        else if (IsKeyDown(KEY_S)) state.witch->moveDown();
+
+        if (IsKeyPressed(KEY_J))
+            state.witch->attack();
+    }
+
+    if (GetLength(controlledEntity->getMovement()) > 1.0f) 
+        controlledEntity->normaliseMovement();
 
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
