@@ -237,12 +237,15 @@ void LevelA::update(float deltaTime)
       traffic->setPosition(position);
    }
 
+   Entity **collidables = mTrafficCars.empty() ? nullptr : mTrafficCars.data();
+   int collidableCount = (int) (mTrafficCars.size());
+
    mGameState.witch->update(
       deltaTime,      // delta time / fixed timestep
       nullptr,        // player
       nullptr,        // map
-      nullptr,        // collidable entities
-      0               // col. entity count
+      collidables,    // collidable entities
+      collidableCount               // col. entity count
    );
 
    Vector2 witchPosition = mGameState.witch->getPosition();

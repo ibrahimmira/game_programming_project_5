@@ -60,11 +60,11 @@ Entity::~Entity()
 
 };
 
-void Entity::checkCollisionY(Entity *collidableEntities, int collisionCheckCount)
+void Entity::checkCollisionY(Entity **collidableEntities, int collisionCheckCount)
 {
     for (int i = 0; i < collisionCheckCount; i++)
     {
-        Entity *collidableEntity = &collidableEntities[i];
+        Entity *collidableEntity = collidableEntities[i];
         
         if (isColliding(collidableEntity))
         {
@@ -91,11 +91,11 @@ void Entity::checkCollisionY(Entity *collidableEntities, int collisionCheckCount
     }
 }
 
-void Entity::checkCollisionX(Entity *collidableEntities, int collisionCheckCount)
+void Entity::checkCollisionX(Entity **collidableEntities, int collisionCheckCount)
 {
     for (int i = 0; i < collisionCheckCount; i++)
     {
-        Entity *collidableEntity = &collidableEntities[i];
+        Entity *collidableEntity = collidableEntities[i];
         
         if (isColliding(collidableEntity))
         {            
@@ -311,7 +311,7 @@ void Entity::AIActivate(Entity *target)
 }
 
 void Entity::update(float deltaTime, Entity *player, Map *map, 
-    Entity *collidableEntities, int collisionCheckCount)
+    Entity **collidableEntities, int collisionCheckCount)
 {
     if (mEntityStatus == INACTIVE) return;
     if (mEntityType == NPC)        AIActivate(player);

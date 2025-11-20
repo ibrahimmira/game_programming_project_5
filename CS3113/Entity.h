@@ -61,10 +61,10 @@ private:
 
     bool isColliding(Entity *other) const;
 
-    void checkCollisionY(Entity *collidableEntities, int collisionCheckCount);
+    void checkCollisionY(Entity **collidableEntities, int collisionCheckCount);
     void checkCollisionY(Map *map);
 
-    void checkCollisionX(Entity *collidableEntities, int collisionCheckCount);
+    void checkCollisionX(Entity **collidableEntities, int collisionCheckCount);
     void checkCollisionX(Map *map);
     
     void resetColliderFlags() 
@@ -97,7 +97,7 @@ public:
     ~Entity();
 
     void update(float deltaTime, Entity *player, Map *map, 
-        Entity *collidableEntities, int collisionCheckCount);
+        Entity **collidableEntities, int collisionCheckCount);
     void render();
     void normaliseMovement() { Normalise(&mMovement); }
 
