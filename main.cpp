@@ -116,7 +116,10 @@ void processInput()
         else if (IsKeyDown(KEY_S)) state.witch->moveDown();
 
         if (IsKeyPressed(KEY_J))
+        {
             state.witch->attack();
+            PlaySound(gCurrentScene->getState().witchAttack);
+        }
     }
 
     if (GetLength(controlledEntity->getMovement()) > 1.0f) 

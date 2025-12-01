@@ -20,6 +20,14 @@ struct GameState
     bool carUnlocked = false;
 
     int nextSceneID = -1;
+
+    Music bgm;
+    Sound carStart;
+    Sound enemyAttack;
+    Sound witchAttack;
+    Sound keyCollect;
+    Sound barrierOpen;
+
 };
 
 class Scene 

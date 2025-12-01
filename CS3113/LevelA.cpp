@@ -7,6 +7,19 @@ LevelA::~LevelA() { shutdown(); }
 
 void LevelA::initialise()
 {
+
+   mGameState.bgm = LoadMusicStream("assets/music_and_sounds/levelA_looping.mp3");
+   SetMusicVolume(mGameState.bgm, 0.33f);
+   PlayMusicStream(mGameState.bgm);
+
+   mGameState.carStart     = LoadSound("assets/music_and_sounds/car_startup.mp3");
+   mGameState.enemyAttack  = LoadSound("assets/music_and_sounds/enemy_hit.mp3");
+   mGameState.witchAttack  = LoadSound("assets/music_and_sounds/witch_hit.mp3");
+   mGameState.keyCollect   = LoadSound("assets/music_and_sounds/key_collect.mp3");
+   mGameState.barrierOpen  = LoadSound("assets/music_and_sounds/barrier_open.mp3");
+   SetSoundVolume(mGameState.keyCollect, 10.25f);
+
+
    mGameState.nextSceneID = -1;
 
    /*
@@ -255,7 +268,9 @@ void LevelA::initialise()
 
 void LevelA::update(float deltaTime)
 {
+   UpdateMusicStream(mGameState.bgm);
 
+   // Update traffic cars
    float leftBoundary  = mGameState.map->getLeftBoundary();
    float rightBoundary = mGameState.map->getRightBoundary();
    float topBoundary   = mGameState.map->getTopBoundary();
@@ -292,6 +307,7 @@ void LevelA::update(float deltaTime)
       carCollidables[carCollidableCount++] = barrier;
    }
 
+   // Update witch (player)
    mGameState.witch->update(
       deltaTime,      // delta time / fixed timestep
       nullptr,        // player
@@ -331,14 +347,12 @@ void LevelA::update(float deltaTime)
 
       float minCarXpos = leftBoundary   + carHalfWidth;
       float maxCarXpos = rightBoundary  - carHalfWidth;
-      // float minCarYpos = mGameState.map->getTopBoundary()    + carHalfHeight;
       float maxCarYpos = mGameState.map->getBottomBoundary() - carHalfHeight;
 
       if (carPosition.x < minCarXpos)      carPosition.x = minCarXpos;
       else if (carPosition.x > maxCarXpos) carPosition.x = maxCarXpos;
 
       if (carPosition.y > maxCarYpos) carPosition.y = maxCarYpos;
-      // else if (carPosition.y < minCarYpos) carPosition.y = minCarYpos;
 
       playableCar->setPosition(carPosition);
    }
@@ -354,6 +368,7 @@ void LevelA::update(float deltaTime)
       }
    }
 
+   // Update enemy 
    bool enemyActive = mGameState.enemy->isActive();
 
    if (enemyActive)
@@ -372,12 +387,6 @@ void LevelA::update(float deltaTime)
          mEnemyAttackTimer = 0.0f;
       }
 
-      // else if (mGameState.witch->isActive() == false)
-      // {
-      //    mEnemyAggro = false;
-      //    mEnemyAttackTimer = 0.0f;
-      // }
-
       if (mEnemyAggro)
       {
          mGameState.enemy->setAIType(FOLLOWER);
@@ -387,6 +396,7 @@ void LevelA::update(float deltaTime)
          if (mEnemyAttackTimer >= mEnemyAttackCooldown)
          {
             mGameState.enemy->attack();
+            PlaySound(mGameState.enemyAttack);
             mEnemyAttackTimer = 0.0f;
          }
       }
@@ -404,6 +414,7 @@ void LevelA::update(float deltaTime)
       0               // col. entity count
    );
 
+   // Update playable car
    if (mGameState.drivingCar && playableCar->isActive())
    {
       playableCar->update(
@@ -499,6 +510,7 @@ void LevelA::update(float deltaTime)
    {
       redButton->deactivate();
       if (barrier != nullptr) barrier->deactivate();
+      PlaySound(mGameState.barrierOpen);
    }
 
    if (mCarKeySpawned && !mCarKeyCollected && carKey != nullptr &&
@@ -506,23 +518,17 @@ void LevelA::update(float deltaTime)
        mGameState.witch->collidesWith(carKey))
    {
       mCarKeyCollected = true;
+      PlaySound(mGameState.keyCollect);
       mGameState.carUnlocked = true;
       carKey->deactivate();
    }
-
-   // if (mCarUnlocked && !mGameState.drivingCar && playableCar->isActive() &&
-   //     mGameState.witch->isActive() && !mRecentlyExitedCar &&
-   //     mGameState.witch->collidesWith(playableCar))
-   // {
-   //    mGameState.drivingCar = true;
-   //    mGameState.witch->deactivate();
-   // }
 
    if (mGameState.carUnlocked && !mGameState.drivingCar && playableCar->isActive() &&
        mGameState.witch->isActive() && !mRecentlyExitedCar &&
        mGameState.witch->collidesWith(playableCar))
    {
       mGameState.drivingCar = true;
+      PlaySound(mGameState.carStart);
       mGameState.witch->deactivate();
    }
 
@@ -558,6 +564,7 @@ void LevelA::update(float deltaTime)
       }
    }
 
+   // Update camera
    Vector2 cameraFocus = (mGameState.drivingCar && playableCar->isActive())
       ? playableCar->getPosition()
       : witchPosition;
@@ -610,6 +617,12 @@ void LevelA::shutdown()
   delete barrier;
   delete carKey;
   delete redButton;
+
+  UnloadMusicStream(mGameState.bgm);
+  UnloadSound(mGameState.carStart);
+  UnloadSound(mGameState.enemyAttack);
+  UnloadSound(mGameState.witchAttack);
+  UnloadSound(mGameState.keyCollect);
 }
 
 void LevelA::exitCar()
