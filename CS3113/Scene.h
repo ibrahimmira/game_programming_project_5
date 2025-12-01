@@ -13,6 +13,9 @@ struct GameState
 
     Camera2D camera;
 
+    int maxLives = 3;
+    int livesRemaining = 3;
+
     bool drivingCar = false;
     bool carUnlocked = false;
 
@@ -34,8 +37,9 @@ public:
     virtual void update(float deltaTime) = 0;
     virtual void render() = 0;
     virtual void shutdown() = 0;
-    
+
     GameState   getState()           const { return mGameState; }
+    void        resetLivesToMax()    { mGameState.livesRemaining = mGameState.maxLives; }
     Vector2     getOrigin()          const { return mOrigin;    }
     const char* getBGColourHexCode() const { return mBGColourHexCode; }
 

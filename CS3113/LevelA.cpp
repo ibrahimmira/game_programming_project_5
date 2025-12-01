@@ -60,7 +60,6 @@ void LevelA::initialise()
    float sizeRatio  = 122.0f / 70.0f;
    Vector2 playableCarSpawnPos = { mOrigin.x + 500.0f, mOrigin.y + 450.0f };
 
-   // Assets from @see https://sscary.itch.io/the-adventurer-female
    mGameState.witch = new Entity(
       {mOrigin.x, playableCarSpawnPos.y},
       {100.0f * sizeRatio, 100.0f},
@@ -71,13 +70,11 @@ void LevelA::initialise()
       PLAYER
    );
 
-   // mGameState.witch->setJumpingPower(550.0f);
    mGameState.witch->setColliderDimensions({
       mGameState.witch->getScale().x / 3.3f,
       mGameState.witch->getScale().y
    });
-   // tAcceleration({0.0f, ACCELERATION_OF_GRAVITY});
-   // mGameState.witch->setFrameSpeed(Entity::DEFAULT_FRAME_SPEED / 2);
+   
    mPlayerCurrentHealth     = mPlayerMaxHealth;
    mPlayerCanTakeDamage     = true;
    mPlayerInvincibilityTimer = 0.0f;
@@ -86,8 +83,8 @@ void LevelA::initialise()
       -----------    CARS     -----------
    */
 
-   const float laneOffsets[] = { -150.0f, -50.0f, 50.0f, 150.0f };
-   const float laneSpeeds[]  = { 350.0f, 320.0f, 300.0f, 280.0f };
+   const float laneOffsets[] = { 50.0f, 150.0f };
+   const float laneSpeeds[]  = { 300.0f, 280.0f };
    const int laneCount = sizeof(laneOffsets) / sizeof(float);
 
    for (int i = 0; i < laneCount; i++)
@@ -125,11 +122,11 @@ void LevelA::initialise()
       playableCar->getScale().x / 1.6f ,
       playableCar->getScale().y / 1.3f
    });
+
    playableCar->setSpeed(250);
    mGameState.car = playableCar;
    mGameState.drivingCar = false;
    mGameState.carUnlocked = false;
-   // mCarUnlocked = false;
    mRecentlyExitedCar = false;
    mCarExitTimer = 0.0f;
 
@@ -189,15 +186,14 @@ void LevelA::initialise()
       enemyAnimationAtlas,
       NPC
    );
+
    mGameState.enemy->setAIType(WANDERER);
    mGameState.enemy->setSpeed(100);
-   // mGameState.enemy->setJumpingPower(550.0f);
    mGameState.enemy->setColliderDimensions({
       mGameState.enemy->getScale().x / 3.5f,
       mGameState.enemy->getScale().y / 3.0f
    });
-   // mGameState.enemy->setAcceleration({ 0.0f, ACCELERATION_OF_GRAVITY });
-   // mGameState.enemy->setFrameSpeed(Entity::DEFAULT_FRAME_SPEED / 2);
+ 
    mEnemySpawnPoint = {
       mOrigin.x + 200.0f,
       playableCarSpawnPos.y
@@ -210,6 +206,50 @@ void LevelA::initialise()
    mEnemyAggro = false;
    mEnemyCanTakeDamage = true;
 
+   /* 
+      ----------- Barrier -----------
+   */
+  
+   Vector2 barrierPosition = {
+      mGameState.map->getRightBoundary() - 200.0f,
+      mGameState.map->getTopBoundary() + 35.0f
+   };
+   barrier = new Entity(
+      barrierPosition,
+      { 1280 / 6.8, 366.0f / 8 },
+      "assets/barrier.png",
+      NPC
+   );
+   barrier->setColliderDimensions({
+      barrier->getScale().x,
+      barrier->getScale().y
+   });
+
+   /* 
+      ----------- Car Key -----------
+   */
+   carKey = nullptr;
+   mCarKeySpawned = false;
+   mCarKeyCollected = false;
+
+   /* 
+      ----------- Red Button -----------
+   */
+   Vector2 redButtonPosition = {
+      mOrigin.x - 400.0f,
+      mOrigin.y - 300.0f
+   };
+   redButton = new Entity(
+      redButtonPosition,
+      { 25, 25 },
+      "assets/red_button.png",
+      NPC
+   );
+   redButton->setColliderDimensions({
+      redButton->getScale().x / 1.1f,
+      redButton->getScale().y / 1.2f
+   });
+
     
 }
 
@@ -218,6 +258,8 @@ void LevelA::update(float deltaTime)
 
    float leftBoundary  = mGameState.map->getLeftBoundary();
    float rightBoundary = mGameState.map->getRightBoundary();
+   float topBoundary   = mGameState.map->getTopBoundary();
+   float bottomBoundary = mGameState.map->getBottomBoundary();
 
    for (size_t i = 0; i < mTrafficCars.size(); i++)
    {
@@ -237,8 +279,18 @@ void LevelA::update(float deltaTime)
       traffic->setPosition(position);
    }
 
-   Entity **collidables = mTrafficCars.empty() ? nullptr : mTrafficCars.data();
-   int collidableCount = (int) (mTrafficCars.size());
+   std::vector<Entity*> collidableEntities = mTrafficCars;
+   if (barrier) collidableEntities.push_back(barrier);
+   
+   Entity **collidables = collidableEntities.empty() ? nullptr : collidableEntities.data();
+   int collidableCount = (int) (collidableEntities.size());
+
+   Entity *carCollidables[1];
+   int carCollidableCount = 0;
+   if (barrier != nullptr)
+   {
+      carCollidables[carCollidableCount++] = barrier;
+   }
 
    mGameState.witch->update(
       deltaTime,      // delta time / fixed timestep
@@ -279,12 +331,14 @@ void LevelA::update(float deltaTime)
 
       float minCarXpos = leftBoundary   + carHalfWidth;
       float maxCarXpos = rightBoundary  - carHalfWidth;
+      // float minCarYpos = mGameState.map->getTopBoundary()    + carHalfHeight;
       float maxCarYpos = mGameState.map->getBottomBoundary() - carHalfHeight;
 
       if (carPosition.x < minCarXpos)      carPosition.x = minCarXpos;
       else if (carPosition.x > maxCarXpos) carPosition.x = maxCarXpos;
 
       if (carPosition.y > maxCarYpos) carPosition.y = maxCarYpos;
+      // else if (carPosition.y < minCarYpos) carPosition.y = minCarYpos;
 
       playableCar->setPosition(carPosition);
    }
@@ -356,8 +410,8 @@ void LevelA::update(float deltaTime)
          deltaTime,
          nullptr,
          nullptr,
-         nullptr,
-         0
+         (carCollidableCount > 0 ? carCollidables : nullptr),
+         carCollidableCount
       );
    }
 
@@ -372,7 +426,7 @@ void LevelA::update(float deltaTime)
       {
          mEnemyCanTakeDamage = true;
       }
-      else if (mEnemyCanTakeDamage && mGameState.witch->collidesWith(mGameState.enemy))
+         else if (mEnemyCanTakeDamage && mGameState.witch->collidesWith(mGameState.enemy))
       {
          mEnemyCurrentHealth--;
          mEnemyCanTakeDamage = false;
@@ -382,8 +436,36 @@ void LevelA::update(float deltaTime)
             mGameState.enemy->deactivate();
             mEnemyAggro = false;
             mGameState.enemy->setAIType(WANDERER);
-            // mCarUnlocked = true;
-            mGameState.carUnlocked = true;
+
+            if (!mCarKeySpawned)
+            {
+               Vector2 carKeyScale = { 80.0f, 80.0f };
+               Vector2 carKeyPosition = mGameState.witch->getPosition();
+               carKeyPosition.x += mCarKeySpawnOffset;
+               carKeyPosition.y -= 40.0f;
+
+               float halfKeyWidth  = carKeyScale.x / 2.0f;
+               float halfKeyHeight = carKeyScale.y / 2.0f;
+
+               carKeyPosition.x = fmaxf(leftBoundary + halfKeyWidth,
+                                        fminf(carKeyPosition.x, rightBoundary - halfKeyWidth));
+               carKeyPosition.y = fmaxf(topBoundary + halfKeyHeight,
+                                        fminf(carKeyPosition.y, bottomBoundary - halfKeyHeight));
+
+               carKey = new Entity(
+                  carKeyPosition,
+                  carKeyScale,
+                  "assets/car_key.png",
+                  BLOCK
+               );
+
+               carKey->setColliderDimensions({
+                  carKeyScale.x * 0.6f,
+                  carKeyScale.y * 0.6f
+               });
+
+               mCarKeySpawned = true;
+            }
          }
       }
 
@@ -411,6 +493,23 @@ void LevelA::update(float deltaTime)
       }
    }
 
+   if (redButton != nullptr && redButton->isActive() &&
+       mGameState.witch->isActive() &&
+       mGameState.witch->collidesWith(redButton))
+   {
+      redButton->deactivate();
+      if (barrier != nullptr) barrier->deactivate();
+   }
+
+   if (mCarKeySpawned && !mCarKeyCollected && carKey != nullptr &&
+       carKey->isActive() && mGameState.witch->isActive() &&
+       mGameState.witch->collidesWith(carKey))
+   {
+      mCarKeyCollected = true;
+      mGameState.carUnlocked = true;
+      carKey->deactivate();
+   }
+
    // if (mCarUnlocked && !mGameState.drivingCar && playableCar->isActive() &&
    //     mGameState.witch->isActive() && !mRecentlyExitedCar &&
    //     mGameState.witch->collidesWith(playableCar))
@@ -432,6 +531,10 @@ void LevelA::update(float deltaTime)
       mGameState.witch->deactivate();
       mEnemyAggro = false;
       mGameState.enemy->setAIType(WANDERER);
+
+      if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
+
+      mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 1; // menu or respawn level
    }
 
    if (mGameState.drivingCar && playableCar->isActive())
@@ -440,6 +543,9 @@ void LevelA::update(float deltaTime)
       {
          if (playableCar->collidesWith(traffic))
          {
+            if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
+            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 1; // menu or respawn after crash
+
             playableCar->deactivate();
             mGameState.drivingCar = false;
             mGameState.carUnlocked = false;
@@ -480,10 +586,13 @@ void LevelA::render()
    mGameState.map->render();
    mGameState.witch->render();
    mGameState.enemy->render();
+   if (carKey != nullptr && carKey->isActive()) carKey->render();
 
    for (Entity *traffic : mTrafficCars) traffic->render();
 
    playableCar->render();
+   barrier->render();
+   redButton->render();
 
   
 }
@@ -498,6 +607,9 @@ void LevelA::shutdown()
   delete mGameState.map;
   delete mGameState.enemy;
   delete playableCar;
+  delete barrier;
+  delete carKey;
+  delete redButton;
 }
 
 void LevelA::exitCar()

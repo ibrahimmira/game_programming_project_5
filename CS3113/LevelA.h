@@ -11,8 +11,8 @@ private:
         17, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 34, 35, 18,
         17, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 4,  3, 18,
         17, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 4,  3, 18,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 1,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8, 8, 2,
+        17, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 4,  3, 18,
+        17, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 4,  3, 18,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 1,
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8, 8, 2,
         17, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 4,  3, 18,
@@ -31,6 +31,9 @@ private:
     int     mEnemyCurrentHealth     = 3;
     bool    mEnemyAggro             = false;
     bool    mEnemyCanTakeDamage     = true;
+    bool    mCarKeySpawned          = false;
+    bool    mCarKeyCollected        = false;
+    float   mCarKeySpawnOffset      = 200.0f;
     int     mPlayerMaxHealth        = 5;
     int     mPlayerCurrentHealth    = 5;
     float   mPlayerInvincibilityDuration = 0.75f;
@@ -51,6 +54,9 @@ public:
                         CAR_SPEED              = 300.0f;
 
     Entity* playableCar = nullptr;
+    Entity* barrier     = nullptr;
+    Entity* carKey      = nullptr;
+    Entity* redButton    = nullptr;
     LevelA();
     LevelA(Vector2 origin, const char *bgHexCode);
     ~LevelA();

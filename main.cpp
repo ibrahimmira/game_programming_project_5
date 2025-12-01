@@ -10,6 +10,8 @@ constexpr Vector2 ORIGIN      = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
             
 constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
 
+std::vector<Entity*> gLifeHearts = {};
+
 // Global Variables
 AppStatus gAppStatus   = RUNNING;
 float gPreviousTicks   = 0.0f,
@@ -33,6 +35,8 @@ void shutdown();
 
 void switchToScene(Scene *scene)
 {   
+    if (gCurrentScene != nullptr) gCurrentScene->shutdown();
+
     gCurrentScene = scene;
     gCurrentScene->initialise();
 }
@@ -50,6 +54,28 @@ void initialise()
 
 
     switchToScene(gLevels[0]);
+
+    // Camera2D cam = gCurrentScene->getState().camera;
+    // Vector2 topLeft = {
+    //     cam.target.x - cam.offset.x,
+    //     cam.target.y - cam.offset.y
+    // };
+
+    for (int i = 0; i < 3; i++)
+    {
+        // Vector2 heartPos = { topLeft.x + 40.0f + (i * 55.0f), topLeft.y + 40.0f };
+        Entity *heart = new Entity(
+            ORIGIN,
+            { 42.0f, 42.0f },
+            "assets/life_heart.png",
+            BLOCK
+        );
+        heart->setColliderDimensions({ 0.0f, 0.0f });
+        heart->deactivate();
+        gLifeHearts.push_back(heart);
+    }
+
+    
 
     SetTargetFPS(FPS);
 
@@ -122,10 +148,34 @@ void update()
 
 void render()
 {
+    GameState state = gCurrentScene->getState();
+    if (gCurrentScene != gMenuScreen)
+    {
+        Camera2D cam = state.camera;
+        Vector2 topLeft = {
+            cam.target.x - cam.offset.x,
+            cam.target.y - cam.offset.y
+        };
+
+        for (size_t i = 0; i < gLifeHearts.size(); i++)
+        {
+            Vector2 heartPos = { topLeft.x + 40.0f + (float) (i) * 55.0f,
+                                topLeft.y + 40.0f };
+            gLifeHearts[i]->setPosition(heartPos);
+
+            if ((int) (i) < state.livesRemaining)
+                gLifeHearts[i]->activate();
+            else
+                gLifeHearts[i]->deactivate();
+        }
+    }
+
     BeginDrawing();
     BeginMode2D (gCurrentScene->getState().camera);
 
     gCurrentScene->render();
+
+    for (Entity *heart : gLifeHearts) heart->render();
 
     EndMode2D();
     EndDrawing();
@@ -151,6 +201,13 @@ int main(void)
         if (gCurrentScene->getState().nextSceneID >= 0)
         {
             int id = gCurrentScene->getState().nextSceneID;
+
+            if (id == 0 && gLevelA != nullptr)
+            {
+                gLevelA->resetLivesToMax();
+                for (Entity *heart : gLifeHearts) if (heart != nullptr) heart->deactivate();
+            }
+
             switchToScene(gLevels[id]);
         }
 
