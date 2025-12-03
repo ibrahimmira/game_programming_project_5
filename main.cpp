@@ -1,4 +1,4 @@
-#include "LevelA.h"
+#include "ShaderProgram.h"
 
 // Global Constants
 constexpr int SCREEN_WIDTH     = 1400,
@@ -20,10 +20,16 @@ float gPreviousTicks   = 0.0f,
 Scene *gCurrentScene = nullptr;
 
 Menu  *gMenuScreen    = nullptr;
-
 LevelA *gLevelA = nullptr;
+LevelB *gLevelB = nullptr;
+LevelC *gLevelC = nullptr;
 
 std::vector<Scene*> gLevels = {};
+
+ShaderProgram gShader;
+Vector2 gLightPosition = { 0.0f, 0.0f };
+
+int applyShader = 1;
 
 // Function Declarations
 void switchToScene(Scene *scene);
@@ -46,24 +52,22 @@ void initialise()
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Scenes");
     InitAudioDevice();
 
+    gShader.load("CS3113/shaders/vertex.glsl", "CS3113/shaders/fragment.glsl");
+
     gMenuScreen = new Menu(ORIGIN, "#222831ff");
     gLevelA = new LevelA(ORIGIN, "#37675fff");
+    gLevelB = new LevelB(ORIGIN, "#37675fff");
+    gLevelC = new LevelC(ORIGIN, "#37675fff");
    
     gLevels.push_back(gMenuScreen);
     gLevels.push_back(gLevelA);
-
+    gLevels.push_back(gLevelB);
+    gLevels.push_back(gLevelC);
 
     switchToScene(gLevels[0]);
 
-    // Camera2D cam = gCurrentScene->getState().camera;
-    // Vector2 topLeft = {
-    //     cam.target.x - cam.offset.x,
-    //     cam.target.y - cam.offset.y
-    // };
-
     for (int i = 0; i < 3; i++)
     {
-        // Vector2 heartPos = { topLeft.x + 40.0f + (i * 55.0f), topLeft.y + 40.0f };
         Entity *heart = new Entity(
             ORIGIN,
             { 42.0f, 42.0f },
@@ -104,8 +108,12 @@ void processInput()
         if      (IsKeyDown(KEY_W)) controlledEntity->moveUp();
         else if (IsKeyDown(KEY_S)) controlledEntity->moveDown();
 
-        if (IsKeyPressed(KEY_SPACE) && gLevelA != nullptr)
-            gLevelA->exitCar();
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            if (gCurrentScene == gLevelA && gLevelA != nullptr) gLevelA->exitCar();
+            else if (gCurrentScene == gLevelB && gLevelB != nullptr) gLevelB->exitCar();
+            else if (gCurrentScene == gLevelC && gLevelC != nullptr) gLevelC->exitCar();
+        }
     }
     else
     {
@@ -146,7 +154,21 @@ void update()
     {
         gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
-    }
+
+        if (gCurrentScene == gLevelC)
+        {
+            GameState currentState = gCurrentScene->getState();
+            if (currentState.drivingCar && currentState.car != nullptr)
+            {
+                gLightPosition = currentState.car->getPosition();
+                gLightPosition.y -= 150.0f;
+            }
+            // else if (currentState.witch != nullptr)
+            // {
+            //     gLightPosition = currentState.witch->getPosition();
+            // }
+        }
+     }
 }
 
 void render()
@@ -176,7 +198,19 @@ void render()
     BeginDrawing();
     BeginMode2D (gCurrentScene->getState().camera);
 
-    gCurrentScene->render();
+
+    
+    if (gCurrentScene == gLevelC) {
+        gShader.begin();
+        gShader.setInt("applyShader", applyShader);
+        gShader.setVector2("lightPosition", gLightPosition);
+        gCurrentScene->render();
+        gShader.end();
+    }
+    else
+    {
+        gCurrentScene->render();
+    }
 
     for (Entity *heart : gLifeHearts) heart->render();
 
@@ -187,7 +221,7 @@ void render()
 void shutdown() 
 {
     for (int i = 0; i < NUMBER_OF_LEVELS; i++) gLevels[i] = nullptr;
-
+    gShader.unload();
     CloseAudioDevice();
     CloseWindow();
 }
