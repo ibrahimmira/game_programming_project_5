@@ -68,10 +68,10 @@ void LevelC::initialise()
    };
 
    float sizeRatio  = 122.0f / 70.0f;
-   Vector2 playableCarSpawnPos = { mOrigin.x, mOrigin.y + 1900.0f };
+   Vector2 playableCarSpawnPos = { mOrigin.x, mGameState.map->getBottomBoundary() -120.0f };
 
    mGameState.witch = new Entity(
-      {mOrigin.x, playableCarSpawnPos.y},
+      {mOrigin.x, playableCarSpawnPos.y - 200.0f},
       {100.0f * sizeRatio, 100.0f},
       witchTextures,
       ATLAS,
@@ -93,13 +93,23 @@ void LevelC::initialise()
       -----------    CARS     -----------
    */
 
-   const float laneOffsets[] = { -1000.0f, -900.0f, -800.0f, -700.0f,
-                                 -400.0f, -300.0f,
-                                 0.0f,   100.0f,
-                                 400.0f, 500.0f,
-                                 800.0f, 900.0f,
-                                 1200.0f, 1300.0f,
-                                 1600.0f, 1700.0f };
+   // const float laneOffsets[] = { -1000.0f, -900.0f, -800.0f, -700.0f,
+   //                               -400.0f, -300.0f,
+   //                               0.0f,   100.0f,
+   //                               400.0f, 500.0f,
+   //                               800.0f, 900.0f,
+   //                               1200.0f, 1300.0f,
+   //                               1600.0f, 1700.0f };
+
+   const float laneOffsets[] = {
+      -1600.0f, -1500.0f, -1400.0f, -1300.0f,
+      -1000.0f, -900.0f,
+      -600.0f,  -500.0f,
+      -200.0f,  -100.0f,
+      200.0f,    300.0f,
+      600.0f,    700.0f,
+      1000.0f,   1100.0f
+   };
 
    // const float laneSpeeds[]  = { -300.0f, -400.0f, -300.0f, -500.0f,
    //                               -700.0f, -600.0f,
@@ -186,8 +196,8 @@ void LevelC::initialise()
    for (int i = 0; i < 3; i++)
    {
       bool fromLeft = (i % 2 == 0);
-      float startX = fromLeft ? mGameState.map->getLeftBoundary() + 550.0f
-                              : mGameState.map->getRightBoundary() - 550.0f;
+      float startX = fromLeft ? mGameState.map->getLeftBoundary() + 650.0f
+                              : mGameState.map->getRightBoundary() - 650.0f;
       float laneY = laneStartY + i * laneSpacing;
 
       Entity *moving = new Entity(
@@ -212,8 +222,30 @@ void LevelC::initialise()
    /* 
       ----------- Car Key -----------
    */
-   carKey = nullptr;
-   mCarKeySpawned = false;
+   Rectangle keyZones[2] = {
+      { 26.0f, 1623.0f, 536.0f - 26.0f, 2440.0f - 1623.0f },
+      { 834.0f, 1623.0f, 1370.0f - 834.0f, 2440.0f - 1623.0f }
+   };
+   int zoneIndex = GetRandomValue(0, 1);
+   Rectangle zone = keyZones[zoneIndex];
+   float randX = (float) GetRandomValue((int) zone.x, (int) (zone.x + zone.width));
+   float randY = (float) GetRandomValue((int) zone.y, (int) (zone.y + zone.height));
+   Vector2 carKeyPosition = {
+      randX,
+      randY
+   };
+
+   carKey = new Entity(
+      carKeyPosition,
+      { 80.0f, 80.0f },
+      "assets/car_key.png",
+      BLOCK
+   );
+   carKey->setColliderDimensions({
+      carKey->getScale().x * 0.6f,
+      carKey->getScale().y * 0.6f
+   });
+   mCarKeySpawned = true;
    mCarKeyCollected = false;
 
     
@@ -352,36 +384,6 @@ void LevelC::update(float deltaTime)
    }
 
    
-   if (!mCarKeySpawned)
-   {
-      Vector2 carKeyScale = { 80.0f, 80.0f };
-      Vector2 carKeyPosition = mGameState.witch->getPosition();
-      carKeyPosition.x += mCarKeySpawnOffset;
-      carKeyPosition.y -= 40.0f;
-
-      float halfKeyWidth  = carKeyScale.x / 2.0f;
-      float halfKeyHeight = carKeyScale.y / 2.0f;
-
-      carKeyPosition.x = fmaxf(leftBoundary + halfKeyWidth,
-                                 fminf(carKeyPosition.x, rightBoundary - halfKeyWidth));
-      carKeyPosition.y = fmaxf(topBoundary + halfKeyHeight,
-                                 fminf(carKeyPosition.y, bottomBoundary - halfKeyHeight));
-
-      carKey = new Entity(
-         carKeyPosition,
-         carKeyScale,
-         "assets/car_key.png",
-         BLOCK
-      );
-
-      carKey->setColliderDimensions({
-         carKeyScale.x * 0.6f,
-         carKeyScale.y * 0.6f
-      });
-
-      mCarKeySpawned = true;
-   }
-   
    if (mCarKeySpawned && !mCarKeyCollected && carKey != nullptr &&
        carKey->isActive() && mGameState.witch->isActive() &&
        mGameState.witch->collidesWith(carKey))
@@ -412,12 +414,32 @@ void LevelC::update(float deltaTime)
 
    if (mGameState.drivingCar && playableCar->isActive())
    {
-      for (Entity *traffic : mTrafficCars)
+      for (size_t i = 0; i < mTrafficCars.size(); i++)
       {
+         Entity *traffic = mTrafficCars[i];
          if (playableCar->collidesWith(traffic))
          {
             if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
-            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3; // menu or respawn after crash in level B
+            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
+
+            playableCar->deactivate();
+            mGameState.drivingCar = false;
+            mGameState.carUnlocked = false;
+            mGameState.witch->setPosition(playableCar->getPosition());
+            mGameState.witch->activate();
+            mRecentlyExitedCar = true;
+            mCarExitTimer = mCarExitCooldown;
+            break;
+         }
+      }
+
+      for (size_t i = 0; i < mBarriers.size(); i++)
+      {
+         Entity *moving = mBarriers[i];
+         if (playableCar->collidesWith(moving))
+         {
+            if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
+            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
 
             playableCar->deactivate();
             mGameState.drivingCar = false;
