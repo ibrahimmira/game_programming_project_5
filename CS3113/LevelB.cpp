@@ -208,7 +208,7 @@ void LevelB::initialise()
    });
  
    mEnemySpawnPoint = {
-      mOrigin.x + 200.0f,
+      mOrigin.x + 400.0f,
       playableCarSpawnPos.y
    };
 
