@@ -34,8 +34,8 @@ private:
     bool    mCarKeySpawned          = false;
     bool    mCarKeyCollected        = false;
     float   mCarKeySpawnOffset      = 200.0f;
-    int     mPlayerMaxHealth        = 5;
-    int     mPlayerCurrentHealth    = 5;
+    int     mPlayerMaxHealth        = 8;
+    int     mPlayerCurrentHealth    = 8;
     float   mPlayerInvincibilityDuration = 0.75f;
     float   mPlayerInvincibilityTimer    = 0.0f;
     bool    mPlayerCanTakeDamage    = true;

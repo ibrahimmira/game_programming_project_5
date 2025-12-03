@@ -97,7 +97,7 @@ void LevelA::initialise()
    */
 
    const float laneOffsets[] = { 50.0f, 150.0f };
-   const float laneSpeeds[]  = { 300.0f, 280.0f };
+   const float laneSpeeds[]  = { 400.0f, 680.0f };
    const int laneCount = sizeof(laneOffsets) / sizeof(float);
 
    for (int i = 0; i < laneCount; i++)
@@ -355,6 +355,11 @@ void LevelA::update(float deltaTime)
       if (carPosition.y > maxCarYpos) carPosition.y = maxCarYpos;
 
       playableCar->setPosition(carPosition);
+
+      if (carPosition.y + carHalfHeight < mGameState.map->getTopBoundary())
+      {
+         mGameState.nextSceneID = 2;
+      }
    }
 
    if (mRecentlyExitedCar)
