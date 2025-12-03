@@ -92,8 +92,10 @@ void processInput()
 {
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
     if (gCurrentScene == gMenuScreen) {
-
         if (IsKeyPressed(KEY_ENTER)) gMenuScreen->setGameCondition();
+        if (IsKeyPressed(KEY_ONE))    gCurrentScene->setNextScene(1);
+        if (IsKeyPressed(KEY_TWO))    gCurrentScene->setNextScene(2);
+        if (IsKeyPressed(KEY_THREE))  gCurrentScene->setNextScene(3);
     }
 
     GameState state = gCurrentScene->getState();
@@ -161,6 +163,10 @@ void update()
     {
         gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
+        // if (gCurrentScene == gLevelC) {
+        //     Vector2 pos = gCurrentScene->getState().witch->getPosition();
+        //     printf("witch pos: (%f, %f)\n", pos.x, pos.y);
+        // } 
 
         if (gCurrentScene == gLevelC)
         {

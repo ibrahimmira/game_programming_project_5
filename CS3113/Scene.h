@@ -47,6 +47,7 @@ public:
     virtual void shutdown() = 0;
 
     GameState   getState()           const { return mGameState; }
+    void        setNextScene(int id)       { mGameState.nextSceneID = id; }
     void        resetLivesToMax()    { mGameState.livesRemaining = mGameState.maxLives; }
     Vector2     getOrigin()          const { return mOrigin;    }
     const char* getBGColourHexCode() const { return mBGColourHexCode; }
