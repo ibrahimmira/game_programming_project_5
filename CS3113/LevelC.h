@@ -50,24 +50,7 @@ private:
         23,  19,  19, 19,  19,  19,  4,  3, 19, 19, 19, 19, 19, 24,
     };
 
-    Vector2 mEnemySpawnPoint        = { 0.0f, 0.0f };
-    float   mEnemyPatrolHalfWidth   = 150.0f;
-    float   mEnemyAggroDistance     = 250.0f;
-    float   mEnemyDisengageDistance = 375.0f;
-    float   mEnemyAttackCooldown    = 2.0f;
-    float   mEnemyAttackTimer       = 0.0f;
-    int     mEnemyMaxHealth         = 3;
-    int     mEnemyCurrentHealth     = 3;
-    bool    mEnemyAggro             = false;
-    bool    mEnemyCanTakeDamage     = true;
-    // Second enemy (guards red button)
-    Entity *mSecondEnemy            = nullptr;
-    int     mSecondEnemyMaxHealth   = 3;
-    int     mSecondEnemyCurrentHealth = 3;
-    bool    mSecondEnemyCanTakeDamage = true;
-    float   mSecondEnemyAttackCooldown = 2.0f;
-    float   mSecondEnemyAttackTimer    = 0.0f;
-    bool    mSecondEnemyAggro          = false;
+   
     bool    mCarKeySpawned          = false;
     bool    mCarKeyCollected        = false;
     float   mCarKeySpawnOffset      = 200.0f;
@@ -89,9 +72,11 @@ public:
                             CAR_SPEED              = 300.0f;
 
     Entity* playableCar = nullptr;
-    Entity* barrier     = nullptr;
+    std::vector<Entity*> mBarriers;
+    std::vector<float>   mBarrierSpeeds;
+    std::vector<float>   mBarrierMinX;
+    std::vector<float>   mBarrierMaxX;
     Entity* carKey      = nullptr;
-    Entity* redButton    = nullptr;
     LevelC();
     LevelC(Vector2 origin, const char *bgHexCode);
     ~LevelC();

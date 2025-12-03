@@ -11,10 +11,7 @@ void LevelC::initialise()
    mGameState.bgm = LoadMusicStream("assets/music_and_sounds/levelA_looping.mp3");
    SetMusicVolume(mGameState.bgm, 0.33f);
    PlayMusicStream(mGameState.bgm);
-
    mGameState.carStart     = LoadSound("assets/music_and_sounds/car_startup.mp3");
-   mGameState.enemyAttack  = LoadSound("assets/music_and_sounds/enemy_hit.mp3");
-   mGameState.witchAttack  = LoadSound("assets/music_and_sounds/witch_hit.mp3");
    mGameState.keyCollect   = LoadSound("assets/music_and_sounds/key_collect.mp3");
    mGameState.barrierOpen  = LoadSound("assets/music_and_sounds/barrier_open.mp3");
    SetSoundVolume(mGameState.keyCollect, 10.25f);
@@ -71,7 +68,7 @@ void LevelC::initialise()
    };
 
    float sizeRatio  = 122.0f / 70.0f;
-   Vector2 playableCarSpawnPos = { mOrigin.x, mOrigin.y + 1800.0f };
+   Vector2 playableCarSpawnPos = { mOrigin.x, mOrigin.y + 1900.0f };
 
    mGameState.witch = new Entity(
       {mOrigin.x, playableCarSpawnPos.y},
@@ -104,13 +101,23 @@ void LevelC::initialise()
                                  1200.0f, 1300.0f,
                                  1600.0f, 1700.0f };
 
-   const float laneSpeeds[]  = { -300.0f, -400.0f, -300.0f, -500.0f,
-                                 -700.0f, -600.0f,
-                                 -600.0f, -700.0f,
-                                 600.0f, 800.0f, 
-                                 800.0f, 700.0f,
-                                 900.0f, 500.0f,
-                                 300.0f, 400.0f };
+   // const float laneSpeeds[]  = { -300.0f, -400.0f, -300.0f, -500.0f,
+   //                               -700.0f, -600.0f,
+   //                               -600.0f, -700.0f,
+   //                               600.0f, 800.0f, 
+   //                               800.0f, 700.0f,
+   //                               900.0f, 500.0f,
+   //                               300.0f, 400.0f };
+
+   const float laneSpeeds[] = {
+      300.0f, 400.0f, 300.0f, 400.0f,
+      300.0f, 400.0f,
+      300.0f, 400.0f,
+      300.0f, 400.0f,
+      300.0f, 400.0f,
+      300.0f, 400.0f,
+      300.0f, 400.0f
+   };
 
    const int laneCount = sizeof(laneOffsets) / sizeof(float);
 
@@ -166,114 +173,41 @@ void LevelC::initialise()
    mGameState.camera.rotation = 0.0f;                            // no rotation
    mGameState.camera.zoom = 1.0f;                                // default zoom
 
-   /* 
-      ----------- ENEMY AI -----------
-   */
-   std::map<Animation, std::vector<int>> enemyAnimationAtlas = 
+   mBarriers.clear();
+   mBarrierSpeeds.clear();
+   mBarrierMinX.clear();
+   mBarrierMaxX.clear();
+
+   float laneStartY = mGameState.map->getTopBoundary() + 200.0f;
+   float laneSpacing = 250.0f;
+   float barrierWidth = 1280.0f / 12.0f;
+   float barrierHeight = 366.0f / 8.0f;
+
+   for (int i = 0; i < 3; i++)
    {
-      {WALK_LEFT,  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }},
-      {WALK_RIGHT, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }},
-      {IDLE_LEFT,  { 1, 2, 3, 4, 5, 6 }      },
-      {IDLE_RIGHT, { 1, 2, 3, 4, 5, 6 }      },
-      {ATTACK_1_LEFT,  { 8, 7, 6, 5, 4, 3, 2, 1 }},
-      {ATTACK_1_RIGHT, { 1, 2, 3, 4, 5, 6, 7, 8 }},
+      bool fromLeft = (i % 2 == 0);
+      float startX = fromLeft ? mGameState.map->getLeftBoundary() + 550.0f
+                              : mGameState.map->getRightBoundary() - 550.0f;
+      float laneY = laneStartY + i * laneSpacing;
 
-   };
+      Entity *moving = new Entity(
+         { startX, laneY },
+         { barrierWidth, barrierHeight },
+         "assets/barrier.png",
+         NPC
+      );
+      moving->setColliderDimensions({ barrierWidth, barrierHeight });
 
-   std::map<Animation, std::string> enemyTextures = 
-   {
-      {WALK_LEFT,  "assets/witch_enemy/Walk_LEFT.png"  },
-      {WALK_RIGHT, "assets/witch_enemy/Walk_RIGHT.png" },
-      {IDLE_LEFT,  "assets/witch_enemy/Idle_LEFT.png"      },
-      {IDLE_RIGHT, "assets/witch_enemy/Idle_RIGHT.png"     },
-      {ATTACK_1_LEFT,  "assets/witch_enemy/Attack_1_LEFT.png"  },
-      {ATTACK_1_RIGHT, "assets/witch_enemy/Attack_1_RIGHT.png" },
-     
-   };
+      float travel = 400.0f;
+      float minX = fromLeft ? startX : startX - travel;
+      float maxX = fromLeft ? startX + travel : startX;
+      float speed = fromLeft ? 120.0f : -120.0f;
 
-   std::map<Animation, Vector2> enemySpritesheetDimensions = 
-   {
-      {WALK_LEFT,  { 1, 10 }},
-      {WALK_RIGHT, { 1, 10 }},
-      {IDLE_LEFT,  { 1, 6 }},
-      {IDLE_RIGHT, { 1, 6 }},
-      {ATTACK_1_LEFT,  { 1, 8 }},
-      {ATTACK_1_RIGHT, { 1, 8 }}
-   };
-
-   float sizeRatio2  = 123.0f / 182.0f;
-
-   // Assets from @see https://sscary.itch.io/the-adventurer-female
-   mGameState.enemy = new Entity(
-      {playableCarSpawnPos.x + 300.0f, playableCarSpawnPos.y},
-      {250.0f * sizeRatio2, 250.0f},
-      enemyTextures,
-      ATLAS,
-      enemySpritesheetDimensions,
-      enemyAnimationAtlas,
-      NPC
-   );
-
-   mGameState.enemy->setAIType(WANDERER);
-   mGameState.enemy->setSpeed(100);
-   mGameState.enemy->setColliderDimensions({
-      mGameState.enemy->getScale().x / 3.5f,
-      mGameState.enemy->getScale().y / 3.0f
-   });
- 
-   mEnemySpawnPoint = {
-      mOrigin.x + 200.0f,
-      playableCarSpawnPos.y
-   };
-
-   mGameState.enemy->setPosition(mEnemySpawnPoint);
-   mGameState.enemy->setWanderRange(mEnemySpawnPoint.x, mEnemyPatrolHalfWidth);
-   mEnemyCurrentHealth = mEnemyMaxHealth;
-   mEnemyAttackTimer = 0.0f;
-   mEnemyAggro = false;
-   mEnemyCanTakeDamage = true;
-
-   // Secondary enemy guarding the red button further up the map
-   mSecondEnemy = new Entity(
-      { mOrigin.x + 100.0f, mOrigin.y - 200.0f },
-      {250.0f * sizeRatio2, 250.0f},
-      enemyTextures,
-      ATLAS,
-      enemySpritesheetDimensions,
-      enemyAnimationAtlas,
-      NPC
-   );
-   mSecondEnemy->setAIType(WANDERER);
-   mSecondEnemy->setSpeed(100);
-   mSecondEnemy->setColliderDimensions({
-      mSecondEnemy->getScale().x / 3.5f,
-      mSecondEnemy->getScale().y / 3.0f
-   });
-   mSecondEnemy->setWanderRange(mSecondEnemy->getPosition().x, mEnemyPatrolHalfWidth);
-   mSecondEnemyMaxHealth = 3;
-   mSecondEnemyCurrentHealth = mSecondEnemyMaxHealth;
-   mSecondEnemyCanTakeDamage = true;
-   mSecondEnemyAggro = false;
-   mSecondEnemyAttackTimer = 0.0f;
-
-   /* 
-      ----------- Barrier -----------
-   */
-  
-   Vector2 barrierPosition = {
-      mGameState.map->getLeftBoundary() + 200.0f,
-      mGameState.map->getTopBoundary() + 335.0f
-   };
-   barrier = new Entity(
-      barrierPosition,
-      { 1280 / 6.8, 366.0f / 8 },
-      "assets/barrier.png",
-      NPC
-   );
-   barrier->setColliderDimensions({
-      barrier->getScale().x,
-      barrier->getScale().y
-   });
+      mBarriers.push_back(moving);
+      mBarrierSpeeds.push_back(speed);
+      mBarrierMinX.push_back(minX);
+      mBarrierMaxX.push_back(maxX);
+   }
 
    /* 
       ----------- Car Key -----------
@@ -281,25 +215,6 @@ void LevelC::initialise()
    carKey = nullptr;
    mCarKeySpawned = false;
    mCarKeyCollected = false;
-
-   /* 
-      ----------- Red Button -----------
-   */
-   Vector2 redButtonPosition = {
-      mOrigin.x + 400.0f,
-      mOrigin.y - 300.0f
-   };
-   redButton = new Entity(
-      redButtonPosition,
-      { 25, 25 },
-      "assets/red_button.png",
-      NPC
-   );
-   redButton->setColliderDimensions({
-      redButton->getScale().x / 1.1f,
-      redButton->getScale().y / 1.2f
-   });
-   redButton->deactivate(); // only appears after defeating second enemy
 
     
 }
@@ -333,17 +248,12 @@ void LevelC::update(float deltaTime)
    }
 
    std::vector<Entity*> collidableEntities = mTrafficCars;
-   if (barrier) collidableEntities.push_back(barrier);
    
    Entity **collidables = collidableEntities.empty() ? nullptr : collidableEntities.data();
    int collidableCount = (int) (collidableEntities.size());
 
    Entity *carCollidables[1];
    int carCollidableCount = 0;
-   if (barrier != nullptr)
-   {
-      carCollidables[carCollidableCount++] = barrier;
-   }
 
    // Update witch (player)
    mGameState.witch->update(
@@ -411,87 +321,7 @@ void LevelC::update(float deltaTime)
       }
    }
 
-   // Update enemy 
-   bool enemyActive = mGameState.enemy->isActive();
-
-   if (enemyActive)
-   {
-      Vector2 enemyPosition = mGameState.enemy->getPosition();
-      float playerDistance  = Vector2Distance(enemyPosition, witchPosition);
-
-      if (!mEnemyAggro && mGameState.witch->isActive() && playerDistance <= mEnemyAggroDistance)
-      {
-         mEnemyAggro = true;
-         mEnemyAttackTimer = 0.0f;
-      }
-      else if (mEnemyAggro && playerDistance >= mEnemyDisengageDistance)
-      {
-         mEnemyAggro = false;
-         mEnemyAttackTimer = 0.0f;
-      }
-
-      if (mEnemyAggro)
-      {
-         mGameState.enemy->setAIType(FOLLOWER);
-         mGameState.enemy->setAIState(WALKING);
-         mEnemyAttackTimer += deltaTime;
-
-         if (mEnemyAttackTimer >= mEnemyAttackCooldown)
-         {
-            mGameState.enemy->attack();
-            PlaySound(mGameState.enemyAttack);
-            mEnemyAttackTimer = 0.0f;
-         }
-      }
-      else
-      {
-         mGameState.enemy->setAIType(WANDERER);
-      }
-   }
-
-   mGameState.enemy->update(
-      deltaTime,      // delta time / fixed timestep
-      mGameState.witch,        // player
-      nullptr, // map
-      nullptr,        // collidable entities
-      0               // col. entity count
-   );
-
-   if (mSecondEnemy != nullptr && mSecondEnemy->isActive())
-   {
-      float secondEnemyDistance = Vector2Distance(mSecondEnemy->getPosition(), witchPosition);
-
-      if (secondEnemyDistance <= mEnemyAggroDistance)
-      {
-         mSecondEnemy->setAIType(FOLLOWER);
-         mSecondEnemy->setAIState(WALKING);
-         mSecondEnemyAggro = true;
-      }
-      else if (secondEnemyDistance >= mEnemyDisengageDistance)
-      {
-         mSecondEnemy->setAIType(WANDERER);
-         mSecondEnemyAggro = false;
-      }
-
-      mSecondEnemy->update(
-         deltaTime,
-         mGameState.witch,
-         nullptr,
-         nullptr,
-         0
-      );
-
-      if (mSecondEnemyAggro)
-      {
-         mSecondEnemyAttackTimer += deltaTime;
-         if (mSecondEnemyAttackTimer >= mSecondEnemyAttackCooldown)
-         {
-            mSecondEnemy->attack();
-            PlaySound(mGameState.enemyAttack);
-            mSecondEnemyAttackTimer = 0.0f;
-         }
-      }
-   }
+   
 
    // Update playable car
    if (mGameState.drivingCar && playableCar->isActive())
@@ -505,127 +335,53 @@ void LevelC::update(float deltaTime)
       );
    }
 
-   enemyActive = mGameState.enemy->isActive();
-
-   if (enemyActive)
+   for (size_t i = 0; i < mBarriers.size(); i++)
    {
-      bool playerAttacking = mGameState.witch->getAnimation() == ATTACK_1_LEFT ||
-                             mGameState.witch->getAnimation() == ATTACK_1_RIGHT;
+      Entity *moving = mBarriers[i];
+      float speed = mBarrierSpeeds[i];
+      Vector2 pos = moving->getPosition();
+      pos.x += speed * deltaTime;
 
-      if (!playerAttacking)
+      if (pos.x < mBarrierMinX[i] || pos.x > mBarrierMaxX[i])
       {
-         mEnemyCanTakeDamage = true;
-      }
-      else if (mEnemyCanTakeDamage && mGameState.witch->collidesWith(mGameState.enemy))
-   {
-      mEnemyCurrentHealth--;
-      mEnemyCanTakeDamage = false;
-
-      if (mEnemyCurrentHealth <= 0)
-         {
-            mGameState.enemy->deactivate();
-            mEnemyAggro = false;
-            mGameState.enemy->setAIType(WANDERER);
-
-            if (!mCarKeySpawned)
-            {
-               Vector2 carKeyScale = { 80.0f, 80.0f };
-               Vector2 carKeyPosition = mGameState.witch->getPosition();
-               carKeyPosition.x += mCarKeySpawnOffset;
-               carKeyPosition.y -= 40.0f;
-
-               float halfKeyWidth  = carKeyScale.x / 2.0f;
-               float halfKeyHeight = carKeyScale.y / 2.0f;
-
-               carKeyPosition.x = fmaxf(leftBoundary + halfKeyWidth,
-                                        fminf(carKeyPosition.x, rightBoundary - halfKeyWidth));
-               carKeyPosition.y = fmaxf(topBoundary + halfKeyHeight,
-                                        fminf(carKeyPosition.y, bottomBoundary - halfKeyHeight));
-
-               carKey = new Entity(
-                  carKeyPosition,
-                  carKeyScale,
-                  "assets/car_key.png",
-                  BLOCK
-               );
-
-               carKey->setColliderDimensions({
-                  carKeyScale.x * 0.6f,
-                  carKeyScale.y * 0.6f
-               });
-
-               mCarKeySpawned = true;
-            }
-         }
+         mBarrierSpeeds[i] = -mBarrierSpeeds[i];
+         pos.x = fmaxf(mBarrierMinX[i], fminf(pos.x, mBarrierMaxX[i]));
       }
 
-      bool enemyAttacking = mGameState.enemy->getAnimation() == ATTACK_1_LEFT ||
-                            mGameState.enemy->getAnimation() == ATTACK_1_RIGHT;
-
-      if (enemyAttacking && mPlayerCanTakeDamage &&
-          mGameState.enemy->collidesWith(mGameState.witch))
-      {
-         mPlayerCurrentHealth--;
-         if (mPlayerCurrentHealth < 0) mPlayerCurrentHealth = 0;
-         mPlayerCanTakeDamage = false;
-         mPlayerInvincibilityTimer = mPlayerInvincibilityDuration;
-
-      }
+      moving->setPosition(pos);
    }
 
-   if (mSecondEnemy != nullptr && mSecondEnemy->isActive())
+   
+   if (!mCarKeySpawned)
    {
-      bool playerAttacking2 = mGameState.witch->getAnimation() == ATTACK_1_LEFT ||
-                              mGameState.witch->getAnimation() == ATTACK_1_RIGHT;
+      Vector2 carKeyScale = { 80.0f, 80.0f };
+      Vector2 carKeyPosition = mGameState.witch->getPosition();
+      carKeyPosition.x += mCarKeySpawnOffset;
+      carKeyPosition.y -= 40.0f;
 
-      if (!playerAttacking2)
-      {
-         mSecondEnemyCanTakeDamage = true;
-      }
-      else if (mSecondEnemyCanTakeDamage && mGameState.witch->collidesWith(mSecondEnemy))
-      {
-         mSecondEnemyCurrentHealth--;
-         mSecondEnemyCanTakeDamage = false;
+      float halfKeyWidth  = carKeyScale.x / 2.0f;
+      float halfKeyHeight = carKeyScale.y / 2.0f;
 
-         if (mSecondEnemyCurrentHealth <= 0)
-         {
-            mSecondEnemy->deactivate();
-            if (redButton != nullptr) redButton->activate();
-         }
-      }
+      carKeyPosition.x = fmaxf(leftBoundary + halfKeyWidth,
+                                 fminf(carKeyPosition.x, rightBoundary - halfKeyWidth));
+      carKeyPosition.y = fmaxf(topBoundary + halfKeyHeight,
+                                 fminf(carKeyPosition.y, bottomBoundary - halfKeyHeight));
 
-      bool secondEnemyAttacking = mSecondEnemy->getAnimation() == ATTACK_1_LEFT ||
-                                  mSecondEnemy->getAnimation() == ATTACK_1_RIGHT;
+      carKey = new Entity(
+         carKeyPosition,
+         carKeyScale,
+         "assets/car_key.png",
+         BLOCK
+      );
 
-      if (secondEnemyAttacking && mPlayerCanTakeDamage &&
-          mSecondEnemy->collidesWith(mGameState.witch))
-      {
-         mPlayerCurrentHealth--;
-         if (mPlayerCurrentHealth < 0) mPlayerCurrentHealth = 0;
-         mPlayerCanTakeDamage = false;
-         mPlayerInvincibilityTimer = mPlayerInvincibilityDuration;
-      }
+      carKey->setColliderDimensions({
+         carKeyScale.x * 0.6f,
+         carKeyScale.y * 0.6f
+      });
+
+      mCarKeySpawned = true;
    }
-
-   if (!mPlayerCanTakeDamage)
-   {
-      mPlayerInvincibilityTimer -= deltaTime;
-      if (mPlayerInvincibilityTimer <= 0.0f)
-      {
-         mPlayerCanTakeDamage = true;
-         mPlayerInvincibilityTimer = 0.0f;
-      }
-   }
-
-   if (redButton != nullptr && redButton->isActive() &&
-       mGameState.witch->isActive() &&
-       mGameState.witch->collidesWith(redButton))
-   {
-      redButton->deactivate();
-      if (barrier != nullptr) barrier->deactivate();
-      PlaySound(mGameState.barrierOpen);
-   }
-
+   
    if (mCarKeySpawned && !mCarKeyCollected && carKey != nullptr &&
        carKey->isActive() && mGameState.witch->isActive() &&
        mGameState.witch->collidesWith(carKey))
@@ -648,8 +404,6 @@ void LevelC::update(float deltaTime)
    if (mPlayerCurrentHealth <= 0 && mGameState.witch->isActive())
    {
       mGameState.witch->deactivate();
-      mEnemyAggro = false;
-      mGameState.enemy->setAIType(WANDERER);
 
       if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
 
@@ -706,17 +460,14 @@ void LevelC::render()
    ClearBackground(ColorFromHex(mBGColourHexCode));
    mGameState.map->render();
    mGameState.witch->render();
-   mGameState.enemy->render();
-   if (mSecondEnemy != nullptr) mSecondEnemy->render();
+
    if (carKey != nullptr && carKey->isActive()) carKey->render();
 
    for (Entity *traffic : mTrafficCars) traffic->render();
 
    playableCar->render();
-   barrier->render();
-   redButton->render();
 
-  
+   for (Entity *moving : mBarriers) moving->render();
 }
 
 
@@ -727,16 +478,14 @@ void LevelC::shutdown()
   mTrafficSpeeds.clear();
   delete mGameState.witch;  
   delete mGameState.map;
-  delete mGameState.enemy;
-  delete mSecondEnemy;
+
   delete playableCar;
-  delete barrier;
+  for (Entity *moving : mBarriers) delete moving;
+  mBarriers.clear();
   delete carKey;
-  delete redButton;
 
   UnloadMusicStream(mGameState.bgm);
   UnloadSound(mGameState.carStart);
-  UnloadSound(mGameState.enemyAttack);
   UnloadSound(mGameState.witchAttack);
   UnloadSound(mGameState.keyCollect);
 }
