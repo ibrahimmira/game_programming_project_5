@@ -628,6 +628,7 @@ void LevelA::shutdown()
   UnloadSound(mGameState.enemyAttack);
   UnloadSound(mGameState.witchAttack);
   UnloadSound(mGameState.keyCollect);
+  UnloadSound(mGameState.barrierOpen);  
 }
 
 void LevelA::exitCar()
