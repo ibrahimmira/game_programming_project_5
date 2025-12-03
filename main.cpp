@@ -30,6 +30,9 @@ ShaderProgram gShader;
 Vector2 gLightPosition = { 0.0f, 0.0f };
 
 int applyShader = 1;
+bool flashlightOn = false;
+bool lightActive = false;
+bool wasDrivingCar = false;
 
 // Function Declarations
 void switchToScene(Scene *scene);
@@ -128,6 +131,10 @@ void processInput()
             state.witch->attack();
             PlaySound(gCurrentScene->getState().witchAttack);
         }
+
+        if (IsKeyPressed(KEY_F) && gCurrentScene == gLevelC) {
+            flashlightOn = !flashlightOn;
+        }
     }
 
     if (GetLength(controlledEntity->getMovement()) > 1.0f) 
@@ -158,15 +165,28 @@ void update()
         if (gCurrentScene == gLevelC)
         {
             GameState currentState = gCurrentScene->getState();
-            if (currentState.drivingCar && currentState.car != nullptr)
+            bool driving = currentState.drivingCar && currentState.car != nullptr && currentState.car->isActive();
+
+            if (driving)
             {
                 gLightPosition = currentState.car->getPosition();
                 gLightPosition.y -= 150.0f;
+                lightActive = true;
+                flashlightOn = true;
             }
-            // else if (currentState.witch != nullptr)
-            // {
-            //     gLightPosition = currentState.witch->getPosition();
-            // }
+            else if (currentState.witch != nullptr && flashlightOn)
+            {
+                gLightPosition = currentState.witch->getPosition();
+                lightActive = true;
+            }
+            else
+            {
+                lightActive = false;
+            }
+        }
+        else
+        {
+            lightActive = false;
         }
      }
 }
@@ -203,7 +223,8 @@ void render()
     if (gCurrentScene == gLevelC) {
         gShader.begin();
         gShader.setInt("applyShader", applyShader);
-        gShader.setVector2("lightPosition", gLightPosition);
+        Vector2 lightPos = lightActive ? gLightPosition : Vector2{-10000.0f, -10000.0f};
+        gShader.setVector2("lightPosition", lightPos);
         gCurrentScene->render();
         gShader.end();
     }
