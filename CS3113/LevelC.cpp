@@ -13,6 +13,7 @@ void LevelC::initialise()
    PlayMusicStream(mGameState.bgm);
    mGameState.carStart     = LoadSound("assets/music_and_sounds/car_startup.mp3");
    mGameState.keyCollect   = LoadSound("assets/music_and_sounds/key_collect.mp3");
+   mGameState.witchAttack  = LoadSound("assets/music_and_sounds/witch_hit.mp3");
    mGameState.barrierOpen  = LoadSound("assets/music_and_sounds/barrier_open.mp3");
    SetSoundVolume(mGameState.keyCollect, 10.25f);
 
@@ -95,14 +96,6 @@ void LevelC::initialise()
       -----------    CARS     -----------
    */
 
-   // const float laneOffsets[] = { -1000.0f, -900.0f, -800.0f, -700.0f,
-   //                               -400.0f, -300.0f,
-   //                               0.0f,   100.0f,
-   //                               400.0f, 500.0f,
-   //                               800.0f, 900.0f,
-   //                               1200.0f, 1300.0f,
-   //                               1600.0f, 1700.0f };
-
    const float laneOffsets[] = {
       -1600.0f, -1500.0f, -1400.0f, -1300.0f,
       -1000.0f, -900.0f,
@@ -113,6 +106,7 @@ void LevelC::initialise()
       1000.0f,   1100.0f
    };
 
+   // More difficult lane speeds
    // const float laneSpeeds[]  = { -300.0f, -400.0f, -300.0f, -500.0f,
    //                               -700.0f, -600.0f,
    //                               -600.0f, -700.0f,
@@ -191,7 +185,7 @@ void LevelC::initialise()
    mBarrierMaxX.clear();
 
    float laneStartY = mGameState.map->getTopBoundary() + 200.0f;
-   float laneSpacing = 250.0f;
+   float laneSpacing = 260.0f;
    float barrierWidth = 1280.0f / 12.0f;
    float barrierHeight = 366.0f / 8.0f;
 
@@ -291,7 +285,7 @@ void LevelC::update(float deltaTime)
 
    // Update witch (player)
    mGameState.witch->update(
-      deltaTime,      // delta time / fixed timestep
+      deltaTime,      // delta time
       nullptr,        // player
       nullptr,        // map
       collidables,    // collidable entities
@@ -340,7 +334,7 @@ void LevelC::update(float deltaTime)
 
       if (carPosition.y + carHalfHeight < mGameState.map->getTopBoundary())
       {
-         mGameState.nextSceneID = 3;
+         mGameState.nextSceneID = 7;
       }
    }
 
@@ -354,8 +348,6 @@ void LevelC::update(float deltaTime)
          mCarExitTimer = 0.0f;
       }
    }
-
-   
 
    // Update playable car
    if (mGameState.drivingCar && playableCar->isActive())
@@ -385,7 +377,6 @@ void LevelC::update(float deltaTime)
       moving->setPosition(pos);
    }
 
-   
    if (mCarKeySpawned && !mCarKeyCollected && carKey != nullptr &&
        carKey->isActive() && mGameState.witch->isActive() &&
        mGameState.witch->collidesWith(carKey))
@@ -411,7 +402,7 @@ void LevelC::update(float deltaTime)
 
       if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
 
-      mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3; // menu or respawn level B
+      mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 8 : 6; // lose or respawn level 
    }
 
   if (mGameState.drivingCar && playableCar->isActive())
@@ -422,7 +413,7 @@ void LevelC::update(float deltaTime)
         if (playableCar->collidesWith(traffic))
         {
            if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
-           mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
+           mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 8 : 6;
 
            playableCar->deactivate();
            mGameState.drivingCar = false;
@@ -444,7 +435,7 @@ void LevelC::update(float deltaTime)
         if (moving != nullptr && playableCar != nullptr && playableCar->isActive() && playableCar->collidesWith(moving))
         {
            if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
-           mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
+           mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 8 : 6;
 
            playableCar->deactivate();
            mGameState.drivingCar = false;
@@ -482,7 +473,6 @@ void LevelC::update(float deltaTime)
       mGameState.camera.target.y = fmaxf(minCameraYpos, fminf(mGameState.camera.target.y, maxCameraYpos));
    }
    
-  
 }
 
 void LevelC::render()

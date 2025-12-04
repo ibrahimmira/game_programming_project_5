@@ -1,5 +1,5 @@
 #include <vector>
-#include "LevelB.h"
+#include "LevelCTransition.h"
 
 constexpr int LEVEL_WIDTH_C = 14,
               LEVEL_HEIGHT_C = 53;
@@ -66,8 +66,8 @@ private:
     bool    mCarKeySpawned          = false;
     bool    mCarKeyCollected        = false;
     float   mCarKeySpawnOffset      = 200.0f;
-    int     mPlayerMaxHealth        = 8;
-    int     mPlayerCurrentHealth    = 8;
+    int     mPlayerMaxHealth        = 10;
+    int     mPlayerCurrentHealth    = 10;
     float   mPlayerInvincibilityDuration = 0.75f;
     float   mPlayerInvincibilityTimer    = 0.0f;
     bool    mPlayerCanTakeDamage    = true;

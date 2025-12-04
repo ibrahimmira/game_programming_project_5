@@ -31,14 +31,13 @@ private:
     float   mEnemyDisengageDistance = 375.0f;
     float   mEnemyAttackCooldown    = 2.0f;
     float   mEnemyAttackTimer       = 0.0f;
-    int     mEnemyMaxHealth         = 3;
-    int     mEnemyCurrentHealth     = 3;
+    int     mEnemyMaxHealth         = 5;
+    int     mEnemyCurrentHealth     = 5;
     bool    mEnemyAggro             = false;
     bool    mEnemyCanTakeDamage     = true;
-    // Second enemy (guards red button)
     Entity *mSecondEnemy            = nullptr;
-    int     mSecondEnemyMaxHealth   = 3;
-    int     mSecondEnemyCurrentHealth = 3;
+    int     mSecondEnemyMaxHealth   = 5;
+    int     mSecondEnemyCurrentHealth = 5;
     bool    mSecondEnemyCanTakeDamage = true;
     float   mSecondEnemyAttackCooldown = 2.0f;
     float   mSecondEnemyAttackTimer    = 0.0f;
@@ -46,8 +45,8 @@ private:
     bool    mCarKeySpawned          = false;
     bool    mCarKeyCollected        = false;
     float   mCarKeySpawnOffset      = 200.0f;
-    int     mPlayerMaxHealth        = 8;
-    int     mPlayerCurrentHealth    = 8;
+    int     mPlayerMaxHealth        = 10;
+    int     mPlayerCurrentHealth    = 10;
     float   mPlayerInvincibilityDuration = 0.75f;
     float   mPlayerInvincibilityTimer    = 0.0f;
     bool    mPlayerCanTakeDamage    = true;

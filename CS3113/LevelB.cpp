@@ -191,7 +191,6 @@ void LevelB::initialise()
 
    float sizeRatio2  = 123.0f / 182.0f;
 
-   // Assets from @see https://sscary.itch.io/the-adventurer-female
    mGameState.enemy = new Entity(
       {playableCarSpawnPos.x + 300.0f, playableCarSpawnPos.y},
       {250.0f * sizeRatio2, 250.0f},
@@ -340,7 +339,7 @@ void LevelB::update(float deltaTime)
 
    // Update witch (player)
    mGameState.witch->update(
-      deltaTime,      // delta time / fixed timestep
+      deltaTime,      // delta time
       nullptr,        // player
       nullptr,        // map
       collidables,    // collidable entities
@@ -389,7 +388,7 @@ void LevelB::update(float deltaTime)
 
       if (carPosition.y + carHalfHeight < mGameState.map->getTopBoundary())
       {
-         mGameState.nextSceneID = 3;
+         mGameState.nextSceneID = 5;
       }
    }
 
@@ -443,7 +442,7 @@ void LevelB::update(float deltaTime)
    }
 
    mGameState.enemy->update(
-      deltaTime,      // delta time / fixed timestep
+      deltaTime,      // delta time
       mGameState.witch,        // player
       nullptr, // map
       nullptr,        // collidable entities
@@ -646,7 +645,7 @@ void LevelB::update(float deltaTime)
 
       if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
 
-      mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 2; // menu or respawn level B
+      mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 8 : 4; // lose or respawn level
    }
 
    if (mGameState.drivingCar && playableCar->isActive())
@@ -656,7 +655,7 @@ void LevelB::update(float deltaTime)
          if (playableCar->collidesWith(traffic))
          {
             if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
-            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 2; // menu or respawn after crash in level B
+            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 8 : 4; // lose or respawn after crash
 
             playableCar->deactivate();
             mGameState.drivingCar = false;

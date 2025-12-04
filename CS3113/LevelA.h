@@ -1,5 +1,5 @@
 #include <vector>
-#include "Menu.h"
+#include "GameInstructions.h"
 
 constexpr int LEVEL_WIDTH = 14,
               LEVEL_HEIGHT = 12;
@@ -27,19 +27,18 @@ private:
     float   mEnemyDisengageDistance = 375.0f;
     float   mEnemyAttackCooldown    = 2.0f;
     float   mEnemyAttackTimer       = 0.0f;
-    int     mEnemyMaxHealth         = 3;
-    int     mEnemyCurrentHealth     = 3;
+    int     mEnemyMaxHealth         = 5;
+    int     mEnemyCurrentHealth     = 5;
     bool    mEnemyAggro             = false;
     bool    mEnemyCanTakeDamage     = true;
     bool    mCarKeySpawned          = false;
     bool    mCarKeyCollected        = false;
     float   mCarKeySpawnOffset      = 200.0f;
-    int     mPlayerMaxHealth        = 8;
-    int     mPlayerCurrentHealth    = 8;
+    int     mPlayerMaxHealth        = 10;
+    int     mPlayerCurrentHealth    = 10;
     float   mPlayerInvincibilityDuration = 0.75f;
     float   mPlayerInvincibilityTimer    = 0.0f;
     bool    mPlayerCanTakeDamage    = true;
-    //bool    mCarUnlocked            = false;
     bool    mRecentlyExitedCar      = false;
     float   mCarExitCooldown        = 2.25f;
     float   mCarExitTimer           = 0.0f;
@@ -49,7 +48,6 @@ private:
 
 public:
     static constexpr float TILE_DIMENSION       = 100.0f,
-                        // ACCELERATION_OF_GRAVITY = 981.0f,
                         END_GAME_THRESHOLD      = 800.0f,
                         CAR_SPEED              = 300.0f;
 
