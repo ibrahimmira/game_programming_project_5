@@ -22,11 +22,15 @@ struct GameState
     int nextSceneID = -1;
 
     Music bgm;
+    Music menuMusic;
     Sound carStart;
     Sound enemyAttack;
     Sound witchAttack;
     Sound keyCollect;
     Sound barrierOpen;
+    Sound winChime;
+    Sound loseChime;
+    Sound beware;
 
 };
 
@@ -49,6 +53,7 @@ public:
     GameState   getState()           const { return mGameState; }
     void        setNextScene(int id)       { mGameState.nextSceneID = id; }
     void        resetLivesToMax()    { mGameState.livesRemaining = mGameState.maxLives; }
+    void        setLivesRemaining(int lives) { mGameState.livesRemaining = lives; }
     Vector2     getOrigin()          const { return mOrigin;    }
     const char* getBGColourHexCode() const { return mBGColourHexCode; }
 
