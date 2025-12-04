@@ -83,6 +83,8 @@ void LevelA::initialise()
       PLAYER
    );
 
+   mGameState.witch->setSpeed(150);
+
    mGameState.witch->setColliderDimensions({
       mGameState.witch->getScale().x / 3.3f,
       mGameState.witch->getScale().y
@@ -136,7 +138,8 @@ void LevelA::initialise()
       playableCar->getScale().y / 1.3f
    });
 
-   playableCar->setSpeed(250);
+   playableCar->setSpeed(200);
+
    mGameState.car = playableCar;
    mGameState.drivingCar = false;
    mGameState.carUnlocked = false;
@@ -200,6 +203,8 @@ void LevelA::initialise()
       NPC
    );
 
+   mGameState.enemy->setSpeed(150);
+
    mGameState.enemy->setAIType(WANDERER);
    mGameState.enemy->setSpeed(100);
    mGameState.enemy->setColliderDimensions({
@@ -208,7 +213,7 @@ void LevelA::initialise()
    });
  
    mEnemySpawnPoint = {
-      mOrigin.x - 400.0f,
+      mOrigin.x - 510.0f,
       playableCarSpawnPos.y
    };
 

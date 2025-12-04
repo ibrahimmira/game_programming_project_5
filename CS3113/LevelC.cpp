@@ -80,6 +80,8 @@ void LevelC::initialise()
       PLAYER
    );
 
+   mGameState.witch->setSpeed(150);
+
    mGameState.witch->setColliderDimensions({
       mGameState.witch->getScale().x / 3.3f,
       mGameState.witch->getScale().y
@@ -142,7 +144,7 @@ void LevelC::initialise()
       Entity *trafficCar = new Entity(
          spawn,
          { 530 / 3, 258 / 3 },
-         "assets/car_30_v2.png",
+         "assets/car_28_v3.png",
          NPC
       );
 
@@ -158,7 +160,7 @@ void LevelC::initialise()
    playableCar = new Entity(
       playableCarSpawnPos,
       { 440 / 3, 680 / 3 },
-      "assets/car_33_v4.png",
+      "assets/car_34.png",
       PLAYER
    );
 
@@ -167,7 +169,7 @@ void LevelC::initialise()
       playableCar->getScale().y / 1.3f
    });
 
-   playableCar->setSpeed(250);
+   playableCar->setSpeed(200);
    mGameState.car = playableCar;
    mGameState.drivingCar = false;
    mGameState.carUnlocked = false;
@@ -412,45 +414,51 @@ void LevelC::update(float deltaTime)
       mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3; // menu or respawn level B
    }
 
-   if (mGameState.drivingCar && playableCar->isActive())
-   {
-      for (size_t i = 0; i < mTrafficCars.size(); i++)
-      {
-         Entity *traffic = mTrafficCars[i];
-         if (playableCar->collidesWith(traffic))
-         {
-            if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
-            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
+  if (mGameState.drivingCar && playableCar->isActive())
+  {
+     for (size_t i = 0; i < mTrafficCars.size(); i++)
+     {
+        Entity *traffic = mTrafficCars[i];
+        if (playableCar->collidesWith(traffic))
+        {
+           if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
+           mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
 
-            playableCar->deactivate();
-            mGameState.drivingCar = false;
-            mGameState.carUnlocked = false;
-            mGameState.witch->setPosition(playableCar->getPosition());
-            mGameState.witch->activate();
+           playableCar->deactivate();
+           mGameState.drivingCar = false;
+           mGameState.carUnlocked = false;
+            if (mGameState.witch != nullptr)
+            {
+               mGameState.witch->setPosition(playableCar->getPosition());
+               mGameState.witch->activate();
+            }
             mRecentlyExitedCar = true;
             mCarExitTimer = mCarExitCooldown;
-            break;
-         }
-      }
+            return;
+        }
+     }
 
-      for (size_t i = 0; i < mBarriers.size(); i++)
-      {
-         Entity *moving = mBarriers[i];
-         if (playableCar->collidesWith(moving))
-         {
-            if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
-            mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
+     for (size_t i = 0; i < mBarriers.size(); i++)
+     {
+        Entity *moving = mBarriers[i];
+        if (moving != nullptr && playableCar != nullptr && playableCar->isActive() && playableCar->collidesWith(moving))
+        {
+           if (mGameState.livesRemaining > 0) mGameState.livesRemaining--;
+           mGameState.nextSceneID = (mGameState.livesRemaining <= 0) ? 0 : 3;
 
-            playableCar->deactivate();
-            mGameState.drivingCar = false;
-            mGameState.carUnlocked = false;
-            mGameState.witch->setPosition(playableCar->getPosition());
-            mGameState.witch->activate();
+           playableCar->deactivate();
+           mGameState.drivingCar = false;
+           mGameState.carUnlocked = false;
+            if (mGameState.witch != nullptr)
+            {
+               mGameState.witch->setPosition(playableCar->getPosition());
+               mGameState.witch->activate();
+            }
             mRecentlyExitedCar = true;
             mCarExitTimer = mCarExitCooldown;
-            break;
-         }
-      }
+            return;
+        }
+     }
    }
 
    // Update camera
