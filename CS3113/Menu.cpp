@@ -5,9 +5,22 @@ Menu::Menu(Vector2 origin, const char *bgHexCode) : Scene { origin, bgHexCode } 
 
 Menu::~Menu() { shutdown(); }
 
+void Menu::myDrawText(const char* text, int fontSize, int y_Offset, int x_offset, Color color) {
+
+   int titleWidth = MeasureText(text, fontSize);
+   
+   int centeredX = (mOrigin.x - titleWidth / 2) + x_offset;
+
+   int centeredY = mOrigin.y + y_Offset;
+
+   DrawText(text, centeredX, centeredY, fontSize, color);
+}
+
 void Menu::initialise()
 {
     mGameState.nextSceneID = -1;
+    mGameState.menuMusic = LoadMusicStream("assets/music_and_sounds/menu_music.mp3");
+    PlayMusicStream(mGameState.menuMusic);
 
     /*
       ----------- CAMERA -----------
@@ -21,20 +34,24 @@ void Menu::initialise()
    
 }
 
-void Menu::update(float deltaTime)
-{
+void Menu::update(float deltaTime) {
 
-   if (mCondition) {
-      mGameState.nextSceneID = 1;
-      mCondition = false;
-   }
+   UpdateMusicStream(mGameState.menuMusic);
+
 }
 
 void Menu::render()
 {
    ClearBackground(ColorFromHex(mBGColourHexCode));
-   DrawText(TextFormat("Parking Adventure"), mOrigin.x - 175, mOrigin.y - 70, 40, WHITE);
-   DrawText(TextFormat("Press enter to start"), mOrigin.x - 150, mOrigin.y + 50, 30, WHITE);
+  
+   myDrawText("The Drive", 200, -150, 0, GOLD);
+   myDrawText("Press Enter to Start", 50, 200, 0, GREEN);
+  
 }
 
-void Menu::shutdown() {}
+void Menu::shutdown() {
+
+   UnloadMusicStream(mGameState.menuMusic);
+
+}
+
