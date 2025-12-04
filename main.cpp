@@ -4,7 +4,7 @@
 constexpr int SCREEN_WIDTH     = 1400,
               SCREEN_HEIGHT    = 800,
               FPS              = 120,
-              NUMBER_OF_LEVELS = 2;
+              NUMBER_OF_LEVELS = 8;
 
 constexpr Vector2 ORIGIN      = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
             
@@ -20,9 +20,14 @@ float gPreviousTicks   = 0.0f,
 Scene *gCurrentScene = nullptr;
 
 Menu  *gMenuScreen    = nullptr;
+Controls *gControlsScreen = nullptr;
+GameInstructions *gInstructionsLevelA = nullptr;
 LevelA *gLevelA = nullptr;
 LevelB *gLevelB = nullptr;
+LevelCTransition *gLevelCTransition = nullptr;
 LevelC *gLevelC = nullptr;
+WinMessage *gWinMessage = nullptr;
+LoseMessage *gLoseMessage = nullptr;
 
 std::vector<Scene*> gLevels = {};
 
@@ -35,6 +40,7 @@ int applyShader = 1;
 bool flashlightOn = false;
 bool lightActive = false;
 bool wasDrivingCar = false;
+int gSharedLives = -1;
 
 // Function Declarations
 void switchToScene(Scene *scene);
@@ -46,10 +52,27 @@ void shutdown();
 
 void switchToScene(Scene *scene)
 {   
-    if (gCurrentScene != nullptr) gCurrentScene->shutdown();
+    if (gCurrentScene != nullptr) {
+        gSharedLives = gCurrentScene->getState().livesRemaining;
+        gCurrentScene->shutdown();
+    }
 
     gCurrentScene = scene;
     gCurrentScene->initialise();
+    bool resetLives = (gCurrentScene == gMenuScreen ||
+                       gCurrentScene == gWinMessage ||
+                       gCurrentScene == gLoseMessage);
+
+    if (resetLives)
+    {
+        int maxLives = gCurrentScene->getState().maxLives;
+        gCurrentScene->setLivesRemaining(maxLives);
+        gSharedLives = maxLives;
+    }
+    else if (gSharedLives >= 0)
+    {
+        gCurrentScene->setLivesRemaining(gSharedLives);
+    }
 }
 
 void initialise()
@@ -60,14 +83,24 @@ void initialise()
     gShader.load("CS3113/shaders/vertex.glsl", "CS3113/shaders/fragment.glsl");
 
     gMenuScreen = new Menu(ORIGIN, "#222831ff");
+    gControlsScreen = new Controls(ORIGIN, "#222831ff");
+    gInstructionsLevelA = new GameInstructions(ORIGIN, "#222831ff");
     gLevelA = new LevelA(ORIGIN, "#37675fff");
     gLevelB = new LevelB(ORIGIN, "#37675fff");
+    gLevelCTransition = new LevelCTransition(ORIGIN, "#222831ff");
     gLevelC = new LevelC(ORIGIN, "#37675fff");
-   
-    gLevels.push_back(gMenuScreen);
-    gLevels.push_back(gLevelA);
-    gLevels.push_back(gLevelB);
-    gLevels.push_back(gLevelC);
+    gWinMessage = new WinMessage(ORIGIN, "#222831ff");
+    gLoseMessage = new LoseMessage(ORIGIN, "#222831ff");
+
+    gLevels.push_back(gMenuScreen); // Scene 0
+    gLevels.push_back(gControlsScreen); // Scene 1
+    gLevels.push_back(gInstructionsLevelA); // Scene 2
+    gLevels.push_back(gLevelA); // Scene 3
+    gLevels.push_back(gLevelB); // Scene 4
+    gLevels.push_back(gLevelCTransition); // Scene 5
+    gLevels.push_back(gLevelC); // Scene 6
+    gLevels.push_back(gWinMessage); // Scene 7
+    gLevels.push_back(gLoseMessage); // Scene 8
 
     switchToScene(gLevels[0]);
     gEffects = new Effects(ORIGIN, (float) SCREEN_WIDTH * 1.25f, (float) SCREEN_HEIGHT * 2.25f);
@@ -98,10 +131,21 @@ void processInput()
 {
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
     if (gCurrentScene == gMenuScreen) {
-        if (IsKeyPressed(KEY_ENTER)) gMenuScreen->setGameCondition();
-        if (IsKeyPressed(KEY_ONE))    gCurrentScene->setNextScene(1);
-        if (IsKeyPressed(KEY_TWO))    gCurrentScene->setNextScene(2);
-        if (IsKeyPressed(KEY_THREE))  gCurrentScene->setNextScene(3);
+        if (IsKeyPressed(KEY_ENTER)) gCurrentScene->setNextScene(1);
+        if (IsKeyPressed(KEY_ONE))    gCurrentScene->setNextScene(3);
+        if (IsKeyPressed(KEY_TWO))    gCurrentScene->setNextScene(4);
+        if (IsKeyPressed(KEY_THREE))  gCurrentScene->setNextScene(5);
+        if (IsKeyPressed(KEY_L))     gCurrentScene->setNextScene(8);
+        if (IsKeyPressed(KEY_W))     gCurrentScene->setNextScene(7);
+    }
+    else if (gCurrentScene == gControlsScreen) {
+        if (IsKeyPressed(KEY_ENTER)) gCurrentScene->setNextScene(2);
+    }
+    else if (gCurrentScene == gInstructionsLevelA) {
+        if (IsKeyPressed(KEY_ENTER)) gCurrentScene->setNextScene(3);
+    }
+    else if (gCurrentScene == gLevelCTransition) {
+        if (IsKeyPressed(KEY_ENTER)) gCurrentScene->setNextScene(6);
     }
 
     GameState state = gCurrentScene->getState();
@@ -147,8 +191,6 @@ void processInput()
 
     if (GetLength(controlledEntity->getMovement()) > 1.0f) 
         controlledEntity->normaliseMovement();
-
-    // if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
 
 void update() 
@@ -169,11 +211,7 @@ void update()
     {
         gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
-        // if (gCurrentScene == gLevelC) {
-        //     Vector2 pos = gCurrentScene->getState().witch->getPosition();
-        //     printf("witch pos: (%f, %f)\n", pos.x, pos.y);
-        // } 
-
+        
         if (gCurrentScene == gLevelA || gCurrentScene == gLevelB)
         {
             Entity *witchPtr = gCurrentScene->getState().witch;
@@ -216,7 +254,7 @@ void update()
 void render()
 {
     GameState state = gCurrentScene->getState();
-    if (gCurrentScene != gMenuScreen)
+    if (gCurrentScene == gLevelA || gCurrentScene == gLevelB || gCurrentScene == gLevelC)
     {
         Camera2D cam = state.camera;
         Vector2 topLeft = {
@@ -235,12 +273,11 @@ void render()
             else
                 gLifeHearts[i]->deactivate();
         }
+        
     }
 
     BeginDrawing();
     BeginMode2D (gCurrentScene->getState().camera);
-
-
     
     if (gCurrentScene == gLevelC) {
         gShader.begin();
@@ -255,7 +292,9 @@ void render()
         gCurrentScene->render();
     }
 
-    for (Entity *heart : gLifeHearts) heart->render();
+    if (gCurrentScene == gLevelA || gCurrentScene == gLevelB || gCurrentScene == gLevelC) {
+        for (Entity *heart : gLifeHearts) heart->render();
+    }
 
     if (gCurrentScene == gLevelA || gCurrentScene == gLevelB)
     {
