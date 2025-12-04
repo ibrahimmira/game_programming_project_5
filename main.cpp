@@ -26,6 +26,8 @@ LevelC *gLevelC = nullptr;
 
 std::vector<Scene*> gLevels = {};
 
+Effects *gEffects = nullptr;
+
 ShaderProgram gShader;
 Vector2 gLightPosition = { 0.0f, 0.0f };
 
@@ -68,6 +70,10 @@ void initialise()
     gLevels.push_back(gLevelC);
 
     switchToScene(gLevels[0]);
+    gEffects = new Effects(ORIGIN, (float) SCREEN_WIDTH * 1.25f, (float) SCREEN_HEIGHT * 2.25f);
+
+    gEffects->start(FADEIN);
+    gEffects->setEffectSpeed(0.33f);
 
     for (int i = 0; i < 3; i++)
     {
@@ -168,6 +174,16 @@ void update()
         //     printf("witch pos: (%f, %f)\n", pos.x, pos.y);
         // } 
 
+        if (gCurrentScene == gLevelA || gCurrentScene == gLevelB)
+        {
+            Entity *witchPtr = gCurrentScene->getState().witch;
+            if (witchPtr != nullptr)
+            {
+                Vector2 cameraTarget = witchPtr->getPosition();
+                gEffects->update(FIXED_TIMESTEP, &cameraTarget);
+            }
+        }
+
         if (gCurrentScene == gLevelC)
         {
             GameState currentState = gCurrentScene->getState();
@@ -241,6 +257,11 @@ void render()
 
     for (Entity *heart : gLifeHearts) heart->render();
 
+    if (gCurrentScene == gLevelA || gCurrentScene == gLevelB)
+    {
+        gEffects->render();
+    }
+
     EndMode2D();
     EndDrawing();
 }
@@ -249,6 +270,7 @@ void shutdown()
 {
     for (int i = 0; i < NUMBER_OF_LEVELS; i++) gLevels[i] = nullptr;
     gShader.unload();
+    gEffects = nullptr;
     CloseAudioDevice();
     CloseWindow();
 }
