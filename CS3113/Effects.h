@@ -1,4 +1,4 @@
-#include "LevelC.h"
+#include "LoseMessage.h"
 
 #ifndef EFFECTS_H
 #define EFFECTS_H
