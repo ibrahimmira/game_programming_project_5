@@ -10,7 +10,6 @@ const float MIN_BRIGHTNESS     = 0.05;    // avoid total darkness
 uniform sampler2D texture0;
 uniform vec2 lightPosition;
 
-// uniform int makeMono;
 uniform int applyShader;
 
 in vec2 fragTexCoord;
@@ -39,12 +38,6 @@ void main()
 
     float distance   = distance(lightPosition, fragPosition);
     float brightness = attenuate(distance, LINEAR_TERM, QUADRATIC_TERM);
-
-    // if (makeMono == 4) attenuate(distance, LINEAR_TERM, QUADRATIC_TERM)
-        
-    // if (applyShader == 1) { 
-    //    finalColor = vec4(luminance * brightness, color.a);
-    //}
 
     if (applyShader == 1) { 
         finalColor = vec4(color.rgb * brightness, color.a);
